@@ -12,9 +12,14 @@ function required(name: string, value: string | undefined): string {
 }
 
 export const env = {
-  apiBaseUrl: required(
-    "NEXT_PUBLIC_API_BASE_URL",
-    process.env.NEXT_PUBLIC_API_BASE_URL,
-  ),
+  apiBaseUrl: required("NEXT_PUBLIC_API_BASE_URL", process.env.NEXT_PUBLIC_API_BASE_URL),
+
+  // Google OAuth web client id (the audience the backend verifies the ID token
+  // against — mirrors the mobile app's WEB_GOOGLE_CLIENT_ID / serverClientId).
   googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "",
+
+  // Sign in with Apple (web flow). Services ID + the redirect URI registered
+  // with Apple (the backend's /auth/apple/callback).
+  appleServiceId: process.env.NEXT_PUBLIC_APPLE_SERVICE_ID ?? "",
+  appleRedirectUri: process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI ?? "",
 };

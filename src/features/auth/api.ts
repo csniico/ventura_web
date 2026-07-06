@@ -38,6 +38,21 @@ export async function signInWithGoogle(idToken: string): Promise<AuthSession> {
   return authSessionSchema.parse(body);
 }
 
+export async function signInWithApple(payload: {
+  identityToken: string;
+  rawNonce: string;
+  firstName?: string;
+  lastName?: string;
+}): Promise<AuthSession> {
+  const body = {
+    identityToken: payload.identityToken,
+    rawNonce: payload.rawNonce,
+    ...(payload.firstName ? { firstName: payload.firstName } : {}),
+    ...(payload.lastName ? { lastName: payload.lastName } : {}),
+  };
+  return authSessionSchema.parse(await apiFetch("/auth/sign-in-apple", { method: "POST", body }));
+}
+
 /**
  * Re-authenticate from a stored refresh token. Used at startup to rehydrate the
  * session (the endpoint returns fresh tokens AND the user). Sends the refresh
