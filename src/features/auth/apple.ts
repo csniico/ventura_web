@@ -72,7 +72,9 @@ async function sha256Hex(input: string): Promise<string> {
     .join("");
 }
 
-export const isAppleConfigured = () => Boolean(env.appleServiceId && env.appleRedirectUri);
+// Only the Services ID is user-provided; the redirect URI is derived from the
+// API base URL (env.appleRedirectUri), so a Services ID is all we need.
+export const isAppleConfigured = () => Boolean(env.appleServiceId);
 
 /** Opens the Apple popup and returns the identity token + raw nonce (+ name). */
 export async function signInWithApplePopup(): Promise<ApplePayload> {

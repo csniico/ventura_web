@@ -11,15 +11,18 @@ function required(name: string, value: string | undefined): string {
   return value.replace(/\/+$/, ""); // strip trailing slashes for base URLs
 }
 
+const apiBaseUrl = required("NEXT_PUBLIC_API_BASE_URL", process.env.NEXT_PUBLIC_API_BASE_URL);
+
 export const env = {
-  apiBaseUrl: required("NEXT_PUBLIC_API_BASE_URL", process.env.NEXT_PUBLIC_API_BASE_URL),
+  apiBaseUrl,
 
   // Google OAuth web client id (the audience the backend verifies the ID token
-  // against — mirrors the mobile app's WEB_GOOGLE_CLIENT_ID / serverClientId).
+  // against — mobile calls this WEB_GOOGLE_CLIENT_ID).
   googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "",
 
-  // Sign in with Apple (web flow). Services ID + the redirect URI registered
-  // with Apple (the backend's /auth/apple/callback).
+  // Sign in with Apple (web flow). Only the Services ID is configured here; the
+  // redirect URI is derived from the API base URL (the backend's registered
+  // /auth/apple/callback), so it isn't a separate secret to manage.
   appleServiceId: process.env.NEXT_PUBLIC_APPLE_SERVICE_ID ?? "",
-  appleRedirectUri: process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI ?? "",
+  appleRedirectUri: `${apiBaseUrl}/auth/apple/callback`,
 };
