@@ -6,6 +6,7 @@ import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/form-controls";
 import { Button } from "@/components/ui/button";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { resourceForm, type Resource, type ResourceForm, type ResourceType } from "./schemas";
 import { useCreateResource, useUpdateResource } from "./hooks";
 
@@ -29,6 +30,7 @@ export function ResourceFormDialog({
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<ResourceForm>({
     resolver: zodResolver(resourceForm),
@@ -39,10 +41,12 @@ export function ResourceFormDialog({
       description: resource?.description ?? "",
       availableQuantity: resource?.availableQuantity ?? 0,
       lowStockThreshold: resource?.lowStockThreshold ?? 5,
+      primaryImage: resource?.primaryImage ?? "",
     },
   });
 
   const type = useWatch({ control, name: "type" });
+  const primaryImage = useWatch({ control, name: "primaryImage" });
 
   const onSubmit = handleSubmit((values) => {
     mutation.mutate(values, { onSuccess: onClose });
@@ -76,6 +80,25 @@ export function ResourceFormDialog({
                 </label>
               ))}
             </div>
+          )}
+        </Field>
+
+        <Field label="Image">
+          {() => (
+            <ImageUpload
+              value={primaryImage || null}
+              folder="products"
+              shape="square"
+              label="Upload image"
+              onUploaded={(f) => {
+                setValue("primaryImage", f.fileUrl, { shouldDirty: true });
+                setValue("primaryImageKey", f.fileKey);
+              }}
+              onRemove={() => {
+                setValue("primaryImage", "", { shouldDirty: true });
+                setValue("primaryImageKey", "");
+              }}
+            />
           )}
         </Field>
 

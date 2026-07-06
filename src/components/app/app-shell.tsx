@@ -64,16 +64,27 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <div className="border-t border-zinc-100 p-3">
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <span className="grid size-8 place-items-center rounded-full bg-primary-100 text-sm font-semibold text-primary-700">
-            {initials(user?.firstName || user?.email)}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-zinc-800">
-              {user?.firstName || "Account"}
-            </p>
-            <p className="truncate text-xs text-zinc-400">{user?.email}</p>
-          </div>
+        <div className="flex items-center gap-1.5 px-1 py-1.5">
+          <Link
+            href="/profile"
+            onClick={onNavigate}
+            className="-mx-1 flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-100"
+          >
+            {user?.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.avatarUrl} alt="" className="size-8 rounded-full object-cover" />
+            ) : (
+              <span className="grid size-8 place-items-center rounded-full bg-primary-100 text-sm font-semibold text-primary-700">
+                {initials(user?.firstName || user?.email)}
+              </span>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-zinc-800">
+                {user?.firstName || "Account"}
+              </p>
+              <p className="truncate text-xs text-zinc-400">{user?.email}</p>
+            </div>
+          </Link>
           <button
             onClick={() => logout.mutate()}
             aria-label="Sign out"

@@ -44,6 +44,8 @@ export const resourceForm = z
     description: z.string().trim().optional(),
     availableQuantity: z.number().int().min(0).optional(),
     lowStockThreshold: z.number().int().min(0).optional(),
+    primaryImage: z.string().optional(),
+    primaryImageKey: z.string().optional(),
   })
   .refine((v) => v.type !== "product" || v.availableQuantity !== undefined, {
     message: "Quantity is required for products",
@@ -58,6 +60,8 @@ export function toCreatePayload(form: ResourceForm) {
     name: form.name,
     price: form.price,
     ...(form.description ? { description: form.description } : {}),
+    ...(form.primaryImage ? { primaryImage: form.primaryImage } : {}),
+    ...(form.primaryImageKey ? { primaryImageKey: form.primaryImageKey } : {}),
   };
   if (form.type === "product") {
     return {

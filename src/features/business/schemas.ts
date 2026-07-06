@@ -40,3 +40,18 @@ export const onboardingNameForm = z.object({
   name: z.string().trim().min(2, "Business name is required"),
 });
 export type OnboardingNameForm = z.infer<typeof onboardingNameForm>;
+
+/** Text fields on the business settings form (logo + categories are separate). */
+export const businessSettingsForm = z.object({
+  name: z.string().trim().min(2, "Business name is required"),
+  tagLine: z.string().trim().optional(),
+  description: z.string().trim().optional(),
+  email: z.union([z.string().trim().email("Enter a valid email"), z.literal("")]).optional(),
+  phone: z.string().trim().optional(),
+  website: z.string().trim().optional(),
+  address: z.string().trim().optional(),
+  city: z.string().trim().optional(),
+  state: z.string().trim().optional(),
+  country: z.string().trim().optional(),
+});
+export type BusinessSettingsForm = z.infer<typeof businessSettingsForm>;
