@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
 import { AuthShell } from "@/components/auth/auth-shell";
-import { GoogleButton, OrDivider } from "@/components/auth/google-button";
+import { SocialSignIn, OrDivider } from "@/components/auth/social-sign-in";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import {
@@ -30,20 +30,22 @@ export default function LoginPage() {
       title={mode === "email" ? "Sign in to Ventura" : "Sign in with password"}
       subtitle={
         mode === "email"
-          ? "Enter your email and we'll send you a secure code."
+          ? "Continue with a provider, or get a secure code by email."
           : "Use the password you set up for your account."
       }
-      footer={
-        <span>
-          New to Ventura? Just enter your email — we&apos;ll set you up.
-        </span>
-      }
+      footer={<span>New to Ventura? Just enter your email — we&apos;ll set you up.</span>}
     >
-      {mode === "email" ? (
-        <EmailMode onUsePassword={() => setMode("password")} />
-      ) : (
-        <PasswordMode onUseEmail={() => setMode("email")} />
-      )}
+      <div className="space-y-6">
+        {/* Social providers first, mirroring the mobile app's ordering */}
+        <SocialSignIn />
+        <OrDivider />
+
+        {mode === "email" ? (
+          <EmailMode onUsePassword={() => setMode("password")} />
+        ) : (
+          <PasswordMode onUseEmail={() => setMode("email")} />
+        )}
+      </div>
     </AuthShell>
   );
 }
@@ -61,7 +63,7 @@ function EmailMode({ onUsePassword }: { onUsePassword: () => void }) {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <Field label="Email address" error={form.formState.errors.email?.message}>
           {({ id, invalid }) => (
@@ -69,7 +71,6 @@ function EmailMode({ onUsePassword }: { onUsePassword: () => void }) {
               id={id}
               type="email"
               autoComplete="email"
-              autoFocus
               placeholder="you@company.com"
               invalid={invalid}
               {...form.register("email")}
@@ -80,9 +81,6 @@ function EmailMode({ onUsePassword }: { onUsePassword: () => void }) {
           <Mail className="size-4" /> Continue with email
         </Button>
       </form>
-
-      <OrDivider />
-      <GoogleButton />
 
       <p className="text-center text-sm text-zinc-500">
         Have a password?{" "}
@@ -120,14 +118,13 @@ function PasswordMode({ onUseEmail }: { onUseEmail: () => void }) {
       return;
     }
     requestCode.mutate(email, {
-      onSuccess: () =>
-        router.push(`/verify-email?email=${encodeURIComponent(email)}&intent=reset`),
+      onSuccess: () => router.push(`/verify-email?email=${encodeURIComponent(email)}&intent=reset`),
       onError: (error) => toast.error(errorMessage(error)),
     });
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         <Field label="Email address" error={form.formState.errors.email?.message}>
           {({ id, invalid }) => (
@@ -135,7 +132,6 @@ function PasswordMode({ onUseEmail }: { onUseEmail: () => void }) {
               id={id}
               type="email"
               autoComplete="email"
-              autoFocus
               placeholder="you@company.com"
               invalid={invalid}
               {...form.register("email")}
@@ -168,9 +164,6 @@ function PasswordMode({ onUseEmail }: { onUseEmail: () => void }) {
           Sign in
         </Button>
       </form>
-
-      <OrDivider />
-      <GoogleButton />
 
       <p className="text-center text-sm text-zinc-500">
         <button type="button" onClick={onUseEmail} className="font-medium text-primary-600 hover:underline">
