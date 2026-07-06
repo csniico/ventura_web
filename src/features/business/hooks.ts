@@ -24,6 +24,17 @@ export function useCategories() {
   });
 }
 
+export function useUpdateBusiness() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Partial<Business> }) =>
+      businessApi.updateBusiness(id, patch),
+    onSuccess: (business: Business) => {
+      queryClient.setQueryData(queryKeys.business.mine, business);
+    },
+  });
+}
+
 export function useCreateBusiness() {
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);

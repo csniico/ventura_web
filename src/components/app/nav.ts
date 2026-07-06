@@ -5,6 +5,7 @@ import {
   ShoppingCart,
   FileText,
   CalendarDays,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 
@@ -21,4 +22,5 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/orders", label: "Orders", icon: ShoppingCart },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
+  { href: "/settings", label: "Business settings", icon: Settings },
 ];
