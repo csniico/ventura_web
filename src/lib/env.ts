@@ -20,9 +20,11 @@ export const env = {
   // against — mobile calls this WEB_GOOGLE_CLIENT_ID).
   googleClientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "",
 
-  // Sign in with Apple (web flow). Only the Services ID is configured here; the
-  // redirect URI is derived from the API base URL (the backend's registered
-  // /auth/apple/callback), so it isn't a separate secret to manage.
+  // Sign in with Apple (web flow). The Services ID is required. The redirect URI
+  // must EXACTLY match the Return URL registered with Apple: it defaults to the
+  // backend's /auth/apple/callback, but can be overridden to the exact value the
+  // backend registered (APPLE_REDIRECT_URL) when they differ.
   appleServiceId: process.env.NEXT_PUBLIC_APPLE_SERVICE_ID ?? "",
-  appleRedirectUri: `${apiBaseUrl}/auth/apple/callback`,
+  appleRedirectUri:
+    process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI?.trim() || `${apiBaseUrl}/auth/apple/callback`,
 };
