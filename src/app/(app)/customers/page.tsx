@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Plus, Users, Pencil, Trash2, Mail, Phone } from "lucide-react";
 import {
   PageHeader,
@@ -110,7 +111,12 @@ export default function CustomersPage() {
                           {initials(c.name)}
                         </span>
                         <div className="min-w-0">
-                          <p className="font-medium text-zinc-900">{c.name}</p>
+                          <Link
+                            href={`/customers/${c.id}`}
+                            className="font-medium text-zinc-900 hover:text-primary-700 hover:underline"
+                          >
+                            {c.name}
+                          </Link>
                           {c.notes && <p className="truncate text-xs text-zinc-400">{c.notes}</p>}
                         </div>
                       </div>

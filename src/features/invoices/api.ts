@@ -2,8 +2,10 @@ import { apiFetch } from "@/lib/api/client";
 import { listPage, type ListParams, type ListResult } from "@/lib/api/list";
 import {
   invoiceSchema,
+  invoiceDetailSchema,
   type CreateInvoiceInput,
   type Invoice,
+  type InvoiceDetail,
   type InvoiceStatus,
   type RecordPaymentForm,
 } from "./schemas";
@@ -20,8 +22,8 @@ export function listInvoices(
   });
 }
 
-export async function getInvoice(id: string): Promise<Invoice> {
-  return invoiceSchema.parse(await apiFetch(`/invoices/${id}`));
+export async function getInvoice(id: string): Promise<InvoiceDetail> {
+  return invoiceDetailSchema.parse(await apiFetch(`/invoices/${id}`));
 }
 
 export async function createInvoice(input: CreateInvoiceInput): Promise<Invoice> {

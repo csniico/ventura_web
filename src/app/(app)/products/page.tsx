@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Plus, Package, Pencil, Trash2 } from "lucide-react";
 import {
   PageHeader,
@@ -133,7 +134,12 @@ export default function ProductsPage() {
                 {items.map((r) => (
                   <tr key={r.id} className="hover:bg-zinc-50/60">
                     <Td>
-                      <p className="font-medium text-zinc-900">{r.name}</p>
+                      <Link
+                        href={`/products/${r.id}`}
+                        className="font-medium text-zinc-900 hover:text-primary-700 hover:underline"
+                      >
+                        {r.name}
+                      </Link>
                       {r.description && <p className="truncate text-xs text-zinc-400">{r.description}</p>}
                     </Td>
                     <Td>

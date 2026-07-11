@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Plus, ShoppingCart, Check, X } from "lucide-react";
 import {
   PageHeader,
@@ -124,7 +125,12 @@ export default function OrdersPage() {
                 {orders.map((o) => (
                   <tr key={o.id} className="hover:bg-zinc-50/60">
                     <Td>
-                      <p className="font-mono text-xs text-zinc-500">{o.orderNumber}</p>
+                      <Link
+                        href={`/orders/${o.id}`}
+                        className="font-mono text-xs font-medium text-primary-700 hover:underline"
+                      >
+                        {o.orderNumber}
+                      </Link>
                       <p className="text-xs text-zinc-400">{o.items.length} item{o.items.length === 1 ? "" : "s"}</p>
                     </Td>
                     <Td className="font-medium text-zinc-900">{o.customerName}</Td>

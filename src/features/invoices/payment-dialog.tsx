@@ -11,10 +11,16 @@ import {
   recordPaymentForm,
   PAYMENT_METHOD_LABELS,
   paymentMethod as paymentMethodEnum,
-  type Invoice,
   type RecordPaymentForm,
 } from "./schemas";
 import { useRecordPayment } from "./hooks";
+
+/** Minimal shape shared by the lean Invoice and the full InvoiceDetail. */
+interface PayableInvoice {
+  id: string;
+  invoiceNumber: string;
+  balance: number;
+}
 
 export function PaymentDialog({
   open,
@@ -23,7 +29,7 @@ export function PaymentDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  invoice: Invoice | null;
+  invoice: PayableInvoice | null;
 }) {
   const record = useRecordPayment();
   const {
