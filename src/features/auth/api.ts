@@ -4,8 +4,6 @@
  * layer (store + mutations), keeping this module side-effect free and testable.
  */
 import { apiFetch } from "@/lib/api/client";
-import { env } from "@/lib/env";
-import { tokenStore } from "@/lib/api/tokens";
 import {
   authSessionSchema,
   messageSchema,
@@ -51,31 +49,6 @@ export async function signInWithApple(payload: {
     ...(payload.lastName ? { lastName: payload.lastName } : {}),
   };
   return authSessionSchema.parse(await apiFetch("/auth/sign-in-apple", { method: "POST", body }));
-}
-
-/**
- * Re-authenticate from a stored refresh token. Used at startup to rehydrate the
- * session (the endpoint returns fresh tokens AND the user). Sends the refresh
- * token as the bearer, per the API contract.
- */
-export async function refreshSession(): Promise<AuthSession | null> {
-  const refreshToken = tokenStore.getRefresh();
-  if (!refreshToken) return null;
-
-  try {
-    const res = await fetch(`${env.apiBaseUrl}/auth/refresh`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${refreshToken}`,
-      },
-      body: JSON.stringify({ refreshToken }),
-    });
-    if (!res.ok) return null;
-    return authSessionSchema.parse(await res.json());
-  } catch {
-    return null;
-  }
 }
 
 export async function logout(): Promise<void> {
