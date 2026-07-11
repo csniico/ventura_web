@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as authApi from "@/features/auth/api";
+import { signInWithApplePopup } from "@/features/auth/apple";
 import { useAuthStore } from "@/features/auth/store";
 import { queryKeys } from "@/lib/query/keys";
 import type { AuthSession } from "@/features/auth/schemas";
@@ -45,6 +46,18 @@ export function useSignInGoogle() {
   const onAuthenticated = useOnAuthenticated();
   return useMutation({
     mutationFn: (idToken: string) => authApi.signInWithGoogle(idToken),
+    onSuccess: onAuthenticated,
+  });
+}
+
+export function useSignInApple() {
+  const onAuthenticated = useOnAuthenticated();
+  return useMutation({
+    // Runs the Apple popup, then exchanges the identity token for a session.
+    mutationFn: async () => {
+      const payload = await signInWithApplePopup();
+      return authApi.signInWithApple(payload);
+    },
     onSuccess: onAuthenticated,
   });
 }
