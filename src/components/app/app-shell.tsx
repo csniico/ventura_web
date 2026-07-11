@@ -10,6 +10,7 @@ import { NAV_ITEMS } from "@/components/app/nav";
 import { useAuthStore } from "@/features/auth/store";
 import { useLogout } from "@/features/auth/hooks";
 import { useMyBusiness } from "@/features/business/hooks";
+import { GlobalSearch } from "@/components/app/global-search";
 import { initials } from "@/lib/format";
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
@@ -58,6 +59,10 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
           <span className="truncate text-sm font-medium text-zinc-800">{business.data.name}</span>
         </div>
       )}
+
+      <div className="px-3 pb-3">
+        <GlobalSearch />
+      </div>
 
       <div className="flex-1 overflow-y-auto px-3">
         <NavLinks onNavigate={onNavigate} />
@@ -118,6 +123,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Menu className="size-5" />
         </button>
         <Logo />
+        <div className="ml-auto">
+          <GlobalSearch variant="compact" />
+        </div>
       </div>
 
       {/* Mobile drawer */}
