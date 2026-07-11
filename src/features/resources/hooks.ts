@@ -19,6 +19,15 @@ export function useResources(params: ListParams & { type?: ResourceType }) {
   });
 }
 
+export function useResource(id: string) {
+  const status = useAuthStore((s) => s.status);
+  return useQuery({
+    queryKey: queryKeys.resources.detail(id),
+    queryFn: () => api.getResource(id),
+    enabled: status === "authenticated" && Boolean(id),
+  });
+}
+
 export function useCreateResource() {
   const qc = useQueryClient();
   return useMutation({

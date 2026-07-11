@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Plus, FileText, Send, CreditCard } from "lucide-react";
 import {
   PageHeader,
@@ -131,7 +132,12 @@ export default function InvoicesPage() {
                 {invoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-zinc-50/60">
                     <Td>
-                      <p className="font-mono text-xs text-zinc-500">{inv.invoiceNumber}</p>
+                      <Link
+                        href={`/invoices/${inv.id}`}
+                        className="font-mono text-xs font-medium text-primary-700 hover:underline"
+                      >
+                        {inv.invoiceNumber}
+                      </Link>
                       <p className="text-xs text-zinc-400">{formatDate(inv.createdAt)}</p>
                     </Td>
                     <Td className="font-medium text-zinc-900">{inv.customerName || "—"}</Td>

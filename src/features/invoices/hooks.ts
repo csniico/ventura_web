@@ -19,6 +19,15 @@ export function useInvoices(params: ListParams & { status?: InvoiceStatus; custo
   });
 }
 
+export function useInvoice(id: string) {
+  const status = useAuthStore((s) => s.status);
+  return useQuery({
+    queryKey: queryKeys.invoices.detail(id),
+    queryFn: () => api.getInvoice(id),
+    enabled: status === "authenticated" && Boolean(id),
+  });
+}
+
 export function useCreateInvoice() {
   const qc = useQueryClient();
   return useMutation({

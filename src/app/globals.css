@@ -35,3 +35,29 @@ body {
 .bg-gradient-primary {
   background: linear-gradient(to right, var(--color-primary-600), var(--color-primary-800));
 }
+
+/*
+ * Printable document (invoice/order). Hidden on screen; on print we hide the
+ * whole app and show only this container, so the browser's "Save as PDF"
+ * exports a clean document.
+ */
+#print-doc {
+  display: none;
+}
+
+@media print {
+  body {
+    visibility: hidden;
+    background: #ffffff;
+  }
+  #print-doc {
+    display: block;
+    visibility: visible;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+  }
+  #print-doc * {
+    visibility: visible;
+  }
+}

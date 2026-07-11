@@ -19,6 +19,25 @@ export function useOrders(params: ListParams & { status?: OrderStatus; customerI
   });
 }
 
+export function useOrder(id: string) {
+  const status = useAuthStore((s) => s.status);
+  return useQuery({
+    queryKey: queryKeys.orders.detail(id),
+    queryFn: () => api.getOrder(id),
+    enabled: status === "authenticated" && Boolean(id),
+  });
+}
+
+/** Fetch several orders by id — used to derive an invoice's line items. */
+export function useOrdersByIds(ids: string[]) {
+  const status = useAuthStore((s) => s.status);
+  return useQuery({
+    queryKey: ["orders", "byIds", [...ids].sort()],
+    queryFn: () => Promise.all(ids.map((id) => api.getOrder(id))),
+    enabled: status === "authenticated" && ids.length > 0,
+  });
+}
+
 export function useCreateOrder() {
   const qc = useQueryClient();
   return useMutation({

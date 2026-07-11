@@ -19,6 +19,15 @@ export function useCustomers(params: ListParams) {
   });
 }
 
+export function useCustomer(id: string) {
+  const status = useAuthStore((s) => s.status);
+  return useQuery({
+    queryKey: queryKeys.customers.detail(id),
+    queryFn: () => api.getCustomer(id),
+    enabled: status === "authenticated" && Boolean(id),
+  });
+}
+
 export function useCreateCustomer() {
   const qc = useQueryClient();
   return useMutation({
