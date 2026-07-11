@@ -35,8 +35,8 @@ function VerifyEmailInner() {
     verify.mutate(
       { email, code: value },
       {
-        onSuccess: (session) =>
-          router.replace(isReset ? "/set-password" : postAuthDestination(session.user)),
+        onSuccess: () =>
+          router.replace(isReset ? "/set-password" : postAuthDestination()),
         onError: (error) => {
           setCode("");
           toast.error(errorMessage(error, "That code didn't work. Try again."));

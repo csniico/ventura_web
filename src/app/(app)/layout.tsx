@@ -1,10 +1,10 @@
 import { RequireAuth } from "@/features/auth/guard";
-import { AppShell } from "@/components/app/app-shell";
+import { BusinessGate } from "@/components/app/business-gate";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <RequireAuth>
-      <AppShell>{children}</AppShell>
+      <BusinessGate>{children}</BusinessGate>
     </RequireAuth>
   );
 }

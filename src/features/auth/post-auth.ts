@@ -1,10 +1,8 @@
-import type { User } from "@/features/auth/schemas";
-
 /**
- * Where a freshly-authenticated user should land: the onboarding gate if they
- * have no business yet, otherwise the dashboard. Mirrors the mobile reference's
- * post-auth routing.
+ * Where a freshly-authenticated user should land. Always the dashboard — the
+ * business gate in the app layout intercepts and shows onboarding if the user
+ * has no business yet, so callers don't need to branch on it.
  */
-export function postAuthDestination(user: User): "/onboarding" | "/dashboard" {
-  return user.businessId ? "/dashboard" : "/onboarding";
+export function postAuthDestination(): "/dashboard" {
+  return "/dashboard";
 }

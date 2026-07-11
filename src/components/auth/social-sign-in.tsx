@@ -9,7 +9,6 @@ import { useSignInGoogle, useSignInApple } from "@/features/auth/hooks";
 import { isAppleConfigured } from "@/features/auth/apple";
 import { postAuthDestination } from "@/features/auth/post-auth";
 import { errorMessage } from "@/lib/api/message";
-import type { AuthSession } from "@/features/auth/schemas";
 import { cn } from "@/lib/cn";
 
 function GoogleIcon() {
@@ -60,7 +59,7 @@ export function SocialSignIn() {
   const google = useSignInGoogle();
   const apple = useSignInApple();
 
-  const onSession = (session: AuthSession) => router.replace(postAuthDestination(session.user));
+  const onSession = () => router.replace(postAuthDestination());
 
   return (
     <div className="space-y-3">
