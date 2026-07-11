@@ -39,7 +39,14 @@ export const appointmentSchema = z
     end: a.end,
     location: a.location ?? null,
     notes: a.notes ?? null,
-    invitees: a.invitees,
+    invitees: a.invitees.map((i) => ({ name: i.name, email: i.email ?? null })),
+    recurrence: a.recurrence
+      ? {
+          frequency: a.recurrence.frequency,
+          interval: a.recurrence.interval,
+          until: a.recurrence.until ?? null,
+        }
+      : null,
     isRecurring: Boolean(a.recurrence),
     status: a.status,
   }));
@@ -53,6 +60,11 @@ export const appointmentForm = z
     end: z.string().min(1, "End time is required"),
     location: z.string().trim().optional(),
     notes: z.string().trim().optional(),
+    invitees: z.array(z.object({ name: z.string(), email: z.string() })),
+    recurrenceEnabled: z.boolean(),
+    recurrenceFrequency,
+    recurrenceInterval: z.number().int().min(1),
+    recurrenceUntil: z.string().optional(),
   })
   .refine((v) => new Date(v.end) > new Date(v.start), {
     message: "End must be after start",
@@ -60,13 +72,34 @@ export const appointmentForm = z
   });
 export type AppointmentForm = z.infer<typeof appointmentForm>;
 
-/** Convert the datetime-local form values into ISO payload for the API. */
+/** Build the create/update body from the form (dates → ISO). */
 export function toAppointmentPayload(form: AppointmentForm) {
-  return {
+  const invitees = form.invitees
+    .filter((i) => i.name.trim())
+    .map((i) => ({ name: i.name.trim(), ...(i.email.trim() ? { email: i.email.trim() } : {}) }));
+
+  const payload: Record<string, unknown> = {
     title: form.title,
     start: new Date(form.start).toISOString(),
     end: new Date(form.end).toISOString(),
     ...(form.location ? { location: form.location } : {}),
     ...(form.notes ? { notes: form.notes } : {}),
+    ...(invitees.length ? { invitees } : {}),
   };
+
+  if (form.recurrenceEnabled) {
+    payload.recurrence = {
+      frequency: form.recurrenceFrequency,
+      interval: form.recurrenceInterval || 1,
+      ...(form.recurrenceUntil ? { until: new Date(form.recurrenceUntil).toISOString() } : {}),
+    };
+  }
+  return payload;
+}
+
+/** Update body — same as create, but explicitly clears recurrence when off. */
+export function toAppointmentUpdate(form: AppointmentForm) {
+  const payload = toAppointmentPayload(form);
+  if (!form.recurrenceEnabled) payload.clearRecurrence = true;
+  return payload;
 }

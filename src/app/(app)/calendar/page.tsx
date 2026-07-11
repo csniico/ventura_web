@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, CalendarDays, Check, X, Trash2, MapPin } from "lucide-react";
+import { Plus, CalendarDays, Check, X, Trash2, MapPin, Pencil } from "lucide-react";
 import { PageHeader, EmptyState, Skeleton, StatusPill, IconButton } from "@/components/ui/data";
 import { Card } from "@/components/ui/misc";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,18 @@ export default function CalendarPage() {
   const query = useAppointments();
   const updateStatus = useUpdateAppointmentStatus();
   const del = useDeleteAppointment();
-  const [createOpen, setCreateOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingAppt, setEditingAppt] = useState<Appointment | null>(null);
   const [deleting, setDeleting] = useState<Appointment | null>(null);
+
+  const openCreate = () => {
+    setEditingAppt(null);
+    setFormOpen(true);
+  };
+  const openEdit = (a: Appointment) => {
+    setEditingAppt(a);
+    setFormOpen(true);
+  };
 
   // Group by day, sorted chronologically.
   const groups = useMemo(() => {
@@ -40,7 +50,7 @@ export default function CalendarPage() {
         title="Calendar"
         subtitle="Your upcoming appointments and bookings."
         action={
-          <Button onClick={() => setCreateOpen(true)}>
+          <Button onClick={openCreate}>
             <Plus className="size-4" /> New appointment
           </Button>
         }
@@ -58,7 +68,7 @@ export default function CalendarPage() {
             title="No appointments"
             description="Schedule your first appointment to see your agenda here."
             action={
-              <Button onClick={() => setCreateOpen(true)}>
+              <Button onClick={openCreate}>
                 <Plus className="size-4" /> New appointment
               </Button>
             }
@@ -91,6 +101,9 @@ export default function CalendarPage() {
                     <div className="inline-flex gap-1">
                       {a.status === "scheduled" && (
                         <>
+                          <IconButton label="Edit" onClick={() => openEdit(a)}>
+                            <Pencil className="size-4" />
+                          </IconButton>
                           <IconButton
                             label="Mark completed"
                             onClick={() => updateStatus.mutate({ id: a.id, status: "completed" })}
@@ -118,7 +131,11 @@ export default function CalendarPage() {
         </div>
       )}
 
-      <AppointmentFormDialog open={createOpen} onClose={() => setCreateOpen(false)} />
+      <AppointmentFormDialog
+        open={formOpen}
+        onClose={() => setFormOpen(false)}
+        appointment={editingAppt}
+      />
       <ConfirmDialog
         open={Boolean(deleting)}
         onClose={() => setDeleting(null)}

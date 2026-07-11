@@ -51,6 +51,19 @@ export function useCreateOrder() {
   });
 }
 
+export function useUpdateOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, items }: { id: string; items: CreateOrderInput["items"] }) =>
+      api.updateOrder(id, items),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.orders.all });
+      toast.success("Order updated");
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+
 export function useUpdateOrderStatus() {
   const qc = useQueryClient();
   return useMutation({

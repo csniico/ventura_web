@@ -30,6 +30,19 @@ export function useCreateAppointment() {
   });
 }
 
+export function useUpdateAppointment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, form }: { id: string; form: AppointmentForm }) =>
+      api.updateAppointment(id, form),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.appointments.all });
+      toast.success("Appointment updated");
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+
 export function useUpdateAppointmentStatus() {
   const qc = useQueryClient();
   return useMutation({

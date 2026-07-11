@@ -1,20 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Check, X, FileText } from "lucide-react";
+import { ArrowLeft, Check, X, FileText, Pencil } from "lucide-react";
 import { Card, FullPageSpinner } from "@/components/ui/misc";
 import { StatusPill, Skeleton, TableWrap, Th, Td } from "@/components/ui/data";
 import { Button } from "@/components/ui/button";
 import { money, formatDateTime } from "@/lib/format";
 import { orderTone } from "@/lib/status";
 import { useOrder, useUpdateOrderStatus } from "@/features/orders/hooks";
+import { OrderCreateDialog } from "@/features/orders/order-create-dialog";
 
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const order = useOrder(id);
   const updateStatus = useUpdateOrderStatus();
+  const [editOpen, setEditOpen] = useState(false);
 
   if (order.isLoading) return <FullPageSpinner />;
   if (order.isError || !order.data) {
@@ -50,6 +53,9 @@ export default function OrderDetailPage() {
             <StatusPill tone={orderTone(o.status)}>{o.status}</StatusPill>
             {o.status === "pending" && (
               <>
+                <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
+                  <Pencil className="size-4" /> Edit
+                </Button>
                 <Button
                   size="sm"
                   variant="secondary"
@@ -140,6 +146,8 @@ export default function OrderDetailPage() {
       </div>
 
       {order.isFetching && <Skeleton className="h-1 w-full" />}
+
+      <OrderCreateDialog open={editOpen} onClose={() => setEditOpen(false)} order={o} />
     </div>
   );
 }
