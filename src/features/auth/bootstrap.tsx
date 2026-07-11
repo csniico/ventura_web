@@ -1,42 +1,34 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { refreshSession } from "@/features/auth/api";
 import { useAuthStore } from "@/features/auth/store";
-import { tokenStore } from "@/lib/api/tokens";
 import { setOnAuthLost } from "@/lib/api/client";
 
 /**
- * Resolves the session once on app load:
- *  - hold a refresh token → call /auth/refresh to get fresh tokens + user
- *  - otherwise → unauthenticated
- * Also wires the API client's "auth lost" hook to sign the user out when a
- * mid-session refresh fails.
+ * Restores the session once on app load, from storage only:
+ *  - tokens + a cached user  → authenticated immediately (no network call)
+ *  - otherwise               → unauthenticated
+ *
+ * The access token is NOT verified up front; the API client refreshes it
+ * lazily on the first 401 and only signs the user out if that refresh fails.
+ * This avoids a refresh round-trip (and a logout risk) on every page reload.
  */
 export function AuthBootstrap({ children }: { children: React.ReactNode }) {
-  const applySession = useAuthStore((s) => s.applySession);
-  const markUnauthenticated = useAuthStore((s) => s.markUnauthenticated);
+  const hydrateFromStorage = useAuthStore((s) => s.hydrateFromStorage);
   const clear = useAuthStore((s) => s.clear);
   const started = useRef(false);
 
   useEffect(() => {
+    // Wire the client's "session lost" hook to sign out on a failed refresh.
     setOnAuthLost(() => clear());
 
-    if (started.current) return;
-    started.current = true;
-
-    if (!tokenStore.hasTokens()) {
-      markUnauthenticated();
-      return;
+    if (!started.current) {
+      started.current = true;
+      hydrateFromStorage();
     }
 
-    refreshSession().then((session) => {
-      if (session) applySession(session);
-      else clear();
-    });
-
     return () => setOnAuthLost(null);
-  }, [applySession, markUnauthenticated, clear]);
+  }, [hydrateFromStorage, clear]);
 
   return <>{children}</>;
 }
