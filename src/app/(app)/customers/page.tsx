@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Users, Pencil, Trash2, Mail, Phone } from "lucide-react";
+import { Plus, Users, Pencil, Trash2, Mail, Phone, Upload } from "lucide-react";
 import {
   PageHeader,
   EmptyState,
@@ -22,12 +22,14 @@ import { cn } from "@/lib/cn";
 import { useCustomers, useDeleteCustomer } from "@/features/customers/hooks";
 import type { Customer } from "@/features/customers/schemas";
 import { CustomerFormDialog } from "@/features/customers/customer-form-dialog";
+import { ImportCustomersDialog } from "@/features/customers/import-dialog";
 
 export default function CustomersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const q = useDebounced(search);
   const [formOpen, setFormOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
   const [deleting, setDeleting] = useState<Customer | null>(null);
 
@@ -50,9 +52,14 @@ export default function CustomersPage() {
         title="Customers"
         subtitle="The people and businesses you serve."
         action={
-          <Button onClick={openCreate}>
-            <Plus className="size-4" /> New customer
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setImportOpen(true)}>
+              <Upload className="size-4" /> Import
+            </Button>
+            <Button onClick={openCreate}>
+              <Plus className="size-4" /> New customer
+            </Button>
+          </div>
         }
       />
 
@@ -165,6 +172,7 @@ export default function CustomersPage() {
       )}
 
       <CustomerFormDialog open={formOpen} onClose={() => setFormOpen(false)} customer={editing} />
+      <ImportCustomersDialog open={importOpen} onClose={() => setImportOpen(false)} />
       <ConfirmDialog
         open={Boolean(deleting)}
         onClose={() => setDeleting(null)}

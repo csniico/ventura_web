@@ -19,6 +19,24 @@ export function useCustomers(params: ListParams) {
   });
 }
 
+export function useImportCustomers() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (rows: api.ImportRow[]) => api.importCustomers(rows),
+    onSuccess: (result) => {
+      qc.invalidateQueries({ queryKey: queryKeys.customers.all });
+      qc.invalidateQueries({ queryKey: queryKeys.setup.status });
+      const created = result.created.length;
+      const skipped = result.skipped.length + result.failed.length;
+      toast.success(
+        `Imported ${created} customer${created === 1 ? "" : "s"}` +
+          (skipped ? ` · ${skipped} skipped` : ""),
+      );
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
+
 export function useCustomer(id: string) {
   const status = useAuthStore((s) => s.status);
   return useQuery({
