@@ -39,7 +39,7 @@ export default function SetPasswordPage() {
       {
         onSuccess: () => {
           toast.success("Password updated.");
-          router.replace(postAuthDestination(user));
+          router.replace(postAuthDestination());
         },
         onError: (error) => toast.error(errorMessage(error)),
       },
@@ -79,7 +79,7 @@ export default function SetPasswordPage() {
         </Button>
         <button
           type="button"
-          onClick={() => router.replace(postAuthDestination(user))}
+          onClick={() => router.replace(postAuthDestination())}
           className="block w-full text-center text-sm text-zinc-500 hover:text-zinc-800"
         >
           Skip for now
