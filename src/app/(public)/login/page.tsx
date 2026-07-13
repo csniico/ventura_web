@@ -105,7 +105,7 @@ function PasswordMode({ onUseEmail }: { onUseEmail: () => void }) {
     signIn.mutate(
       { email, password },
       {
-        onSuccess: (session) => router.replace(postAuthDestination(session.user)),
+        onSuccess: () => router.replace(postAuthDestination()),
         onError: (error) => toast.error(errorMessage(error)),
       },
     );

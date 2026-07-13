@@ -9,20 +9,50 @@ import { Button } from "@/components/ui/button";
 import { money } from "@/lib/format";
 import { useCustomers } from "@/features/customers/hooks";
 import { useResources } from "@/features/resources/hooks";
-import { useCreateOrder } from "./hooks";
+import { useCreateOrder, useUpdateOrder } from "./hooks";
+import type { Order } from "./schemas";
 
 interface Line {
   resourceId: string;
   quantity: number;
 }
 
-export function OrderCreateDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function OrderCreateDialog({
+  open,
+  onClose,
+  order,
+}: {
+  open: boolean;
+  onClose: () => void;
+  order?: Order | null;
+}) {
+  const editing = Boolean(order);
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      title={editing ? "Edit order" : "New order"}
+      description={editing ? "Update the items on this order." : "Record a sale for a customer."}
+      size="lg"
+    >
+      {/* Dialog unmounts children when closed, so this form re-initialises on each open. */}
+      <OrderForm order={order} onDone={onClose} />
+    </Dialog>
+  );
+}
+
+function OrderForm({ order, onDone }: { order?: Order | null; onDone: () => void }) {
+  const editing = Boolean(order);
   const customers = useCustomers({ limit: 100 });
   const resources = useResources({ limit: 100 });
   const create = useCreateOrder();
+  const update = useUpdateOrder();
+  const mutation = editing ? update : create;
 
-  const [customerId, setCustomerId] = useState("");
-  const [lines, setLines] = useState<Line[]>([{ resourceId: "", quantity: 1 }]);
+  const [customerId, setCustomerId] = useState(order?.customerId ?? "");
+  const [lines, setLines] = useState<Line[]>(
+    order ? order.items.map((it) => ({ resourceId: it.resourceId, quantity: it.quantity })) : [{ resourceId: "", quantity: 1 }],
+  );
   const [error, setError] = useState<string | null>(null);
 
   const priceOf = useMemo(() => {
@@ -32,35 +62,26 @@ export function OrderCreateDialog({ open, onClose }: { open: boolean; onClose: (
 
   const total = lines.reduce((sum, l) => sum + priceOf(l.resourceId) * l.quantity, 0);
 
-  function reset() {
-    setCustomerId("");
-    setLines([{ resourceId: "", quantity: 1 }]);
-    setError(null);
-  }
-
   function submit() {
     const items = lines
       .filter((l) => l.resourceId && l.quantity > 0)
       .map((l) => ({ resourceId: l.resourceId, quantity: l.quantity }));
-    if (!customerId) return setError("Select a customer");
+    if (!editing && !customerId) return setError("Select a customer");
     if (items.length === 0) return setError("Add at least one item");
-    create.mutate(
-      { customerId, items },
-      {
-        onSuccess: () => {
-          reset();
-          onClose();
-        },
-      },
-    );
+
+    if (editing && order) {
+      update.mutate({ id: order.id, items }, { onSuccess: onDone });
+    } else {
+      create.mutate({ customerId, items }, { onSuccess: onDone });
+    }
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="New order" description="Record a sale for a customer." size="lg">
+    <>
       <div className="space-y-4">
         <Field label="Customer" error={error && !customerId ? error : undefined}>
           {({ id }) => (
-            <Select id={id} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+            <Select id={id} value={customerId} disabled={editing} onChange={(e) => setCustomerId(e.target.value)}>
               <option value="">Select a customer…</option>
               {(customers.data?.data ?? []).map((c) => (
                 <option key={c.id} value={c.id}>
@@ -132,13 +153,13 @@ export function OrderCreateDialog({ open, onClose }: { open: boolean; onClose: (
       </div>
 
       <DialogFooter>
-        <Button variant="secondary" onClick={onClose}>
+        <Button variant="secondary" onClick={onDone}>
           Cancel
         </Button>
-        <Button onClick={submit} loading={create.isPending}>
-          Create order
+        <Button onClick={submit} loading={mutation.isPending}>
+          {editing ? "Save changes" : "Create order"}
         </Button>
       </DialogFooter>
-    </Dialog>
+    </>
   );
 }

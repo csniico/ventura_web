@@ -7,9 +7,15 @@
  *  - single-flight refresh: concurrent 401s share one refresh round-trip
  *  - on refresh failure, clears tokens and notifies the app (sign-out)
  */
-import { env } from "@/lib/env";
 import { tokenStore } from "@/lib/api/tokens";
 import { ApiError, failureFromResponse, networkFailure } from "@/lib/api/errors";
+
+/**
+ * Same-origin proxy prefix. Requests hit our own Next server, which rewrites
+ * them to the real backend (see next.config.ts). The browser never sees the
+ * backend URL, and no CORS is involved.
+ */
+const PROXY_BASE = "/api/backend";
 
 export type Query = Record<string, string | number | boolean | undefined | null>;
 
@@ -30,15 +36,16 @@ export function setOnAuthLost(cb: (() => void) | null): void {
 }
 
 function buildUrl(path: string, query?: Query): string {
-  const url = new URL(`${env.apiBaseUrl}${path}`);
+  const params = new URLSearchParams();
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value !== undefined && value !== null && value !== "") {
-        url.searchParams.set(key, String(value));
+        params.set(key, String(value));
       }
     }
   }
-  return url.toString();
+  const qs = params.toString();
+  return `${PROXY_BASE}${path}${qs ? `?${qs}` : ""}`;
 }
 
 async function parseBody(res: Response): Promise<unknown> {
