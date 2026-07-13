@@ -22,6 +22,14 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   return orderSchema.parse(await apiFetch("/orders", { method: "POST", body: input }));
 }
 
+/** Replace a (pending) order's line items. Server re-snapshots prices + total. */
+export async function updateOrder(
+  id: string,
+  items: CreateOrderInput["items"],
+): Promise<Order> {
+  return orderSchema.parse(await apiFetch(`/orders/${id}`, { method: "PATCH", body: { items } }));
+}
+
 export async function updateOrderStatus(id: string, status: OrderStatus): Promise<Order> {
   return orderSchema.parse(
     await apiFetch(`/orders/${id}/status`, { method: "PATCH", body: { status } }),

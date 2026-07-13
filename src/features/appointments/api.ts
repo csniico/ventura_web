@@ -3,6 +3,7 @@ import { apiFetch } from "@/lib/api/client";
 import {
   appointmentSchema,
   toAppointmentPayload,
+  toAppointmentUpdate,
   type Appointment,
   type AppointmentForm,
   type AppointmentStatus,
@@ -19,6 +20,12 @@ export async function listAppointments(range: { from?: string; to?: string } = {
 export async function createAppointment(form: AppointmentForm): Promise<Appointment> {
   return appointmentSchema.parse(
     await apiFetch("/appointments", { method: "POST", body: toAppointmentPayload(form) }),
+  );
+}
+
+export async function updateAppointment(id: string, form: AppointmentForm): Promise<Appointment> {
+  return appointmentSchema.parse(
+    await apiFetch(`/appointments/${id}`, { method: "PATCH", body: toAppointmentUpdate(form) }),
   );
 }
 
