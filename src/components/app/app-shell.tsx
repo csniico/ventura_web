@@ -47,20 +47,19 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 items-center px-5">
+      <div className="flex h-16 items-center justify-between gap-3 border-b border-zinc-100 px-4">
         <Logo />
+        {business.data && (
+          <span
+            title={business.data.name}
+            className="max-w-[45%] truncate text-sm font-medium text-zinc-500"
+          >
+            {business.data.name}
+          </span>
+        )}
       </div>
 
-      {business.data && (
-        <div className="mx-3 mb-3 flex items-center gap-2.5 rounded-xl bg-zinc-50 px-3 py-2.5">
-          <span className="grid size-8 place-items-center rounded-lg bg-gradient-primary text-xs font-bold text-white">
-            {initials(business.data.name)}
-          </span>
-          <span className="truncate text-sm font-medium text-zinc-800">{business.data.name}</span>
-        </div>
-      )}
-
-      <div className="px-3 pb-3">
+      <div className="px-3 pb-3 pt-3">
         <GlobalSearch />
       </div>
 

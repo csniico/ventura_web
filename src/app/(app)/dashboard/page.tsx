@@ -15,6 +15,7 @@ import { useMyBusiness } from "@/features/business/hooks";
 import { useDashboardSummary } from "@/features/dashboard/hooks";
 import type { DashboardRange, DashboardSummary } from "@/features/dashboard/api";
 import { RevenueChart } from "@/features/dashboard/revenue-chart";
+import { GetStarted } from "@/features/dashboard/get-started";
 
 const RANGES: { value: DashboardRange; label: string }[] = [
   { value: "7d", label: "7 days" },
@@ -77,6 +78,8 @@ function Overview() {
 
   return (
     <div className="space-y-6">
+      <GetStarted />
+
       <div className="flex justify-end">
         <div className="inline-flex rounded-xl border border-zinc-200 bg-white p-1 shadow-sm">
           {RANGES.map((r) => (
