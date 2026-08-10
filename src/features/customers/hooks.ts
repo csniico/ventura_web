@@ -46,6 +46,16 @@ export function useCustomer(id: string) {
   });
 }
 
+/** All customers (cached), for the list's stats/search/sort/paginate. */
+export function useAllCustomers() {
+  const status = useAuthStore((s) => s.status);
+  return useQuery({
+    queryKey: [...queryKeys.customers.all, "all-list"],
+    queryFn: api.listAllCustomers,
+    enabled: status === "authenticated",
+  });
+}
+
 export function useCreateCustomer() {
   const qc = useQueryClient();
   return useMutation({

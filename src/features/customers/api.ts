@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { apiFetch } from "@/lib/api/client";
 import { listPage, type ListParams, type ListResult } from "@/lib/api/list";
+import { fetchAllPages } from "@/lib/api/paginate";
 import { customerSchema, toCustomerPayload, type Customer, type CustomerForm } from "./schemas";
 
 export interface ImportRow {
@@ -32,6 +33,13 @@ export function listCustomers(params: ListParams): Promise<ListResult<Customer>>
     limit: params.limit ?? 20,
     q: params.q,
   });
+}
+
+/** Every customer (walks all pages) — powers the list's client-side stats,
+ *  search, sort and pagination. The list endpoint has no sort param. */
+export async function listAllCustomers(): Promise<Customer[]> {
+  const raw = await fetchAllPages("/customers", {}, 100);
+  return raw.map((r) => customerSchema.parse(r));
 }
 
 export async function getCustomer(id: string): Promise<Customer> {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/field";
@@ -9,15 +9,19 @@ import { Button } from "@/components/ui/button";
 import { customerForm, type Customer, type CustomerForm } from "./schemas";
 import { useCreateCustomer, useUpdateCustomer } from "./hooks";
 import { errorMessage } from "@/lib/api/message";
+import { useDebounced } from "@/lib/hooks";
 
 export function CustomerFormDialog({
   open,
   onClose,
   customer,
+  existingNames,
 }: {
   open: boolean;
   onClose: () => void;
   customer?: Customer | null;
+  /** Known customer names — enables a soft "name already exists" hint on create. */
+  existingNames?: string[];
 }) {
   const editing = Boolean(customer);
   const create = useCreateCustomer();
@@ -28,6 +32,7 @@ export function CustomerFormDialog({
     register,
     handleSubmit,
     setError,
+    control,
     formState: { errors },
   } = useForm<CustomerForm>({
     resolver: zodResolver(customerForm),
@@ -52,6 +57,15 @@ export function CustomerFormDialog({
     });
   });
 
+  const nameValue = useWatch({ control, name: "name" });
+  const debouncedName = useDebounced(nameValue ?? "", 300);
+  const dupName =
+    !editing &&
+    debouncedName.trim().length > 1 &&
+    (existingNames ?? []).some(
+      (n) => n.trim().toLowerCase() === debouncedName.trim().toLowerCase(),
+    );
+
   return (
     <Dialog
       open={open}
@@ -65,6 +79,11 @@ export function CustomerFormDialog({
             <Input id={id} invalid={invalid} placeholder="Jane Doe" {...register("name")} />
           )}
         </Field>
+        {dupName && (
+          <p className="-mt-2 text-xs text-amber-600">
+            A customer named “{debouncedName.trim()}” already exists — add an email to tell them apart.
+          </p>
+        )}
         <Field label="Email" error={errors.email?.message}>
           {({ id, invalid }) => (
             <Input id={id} invalid={invalid} type="email" placeholder="jane@example.com" {...register("email")} />
