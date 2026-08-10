@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/form-controls";
 import { Button } from "@/components/ui/button";
 import { customerForm, type Customer, type CustomerForm } from "./schemas";
 import { useCreateCustomer, useUpdateCustomer } from "./hooks";
+import { errorMessage } from "@/lib/api/message";
 
 export function CustomerFormDialog({
   open,
@@ -26,6 +27,7 @@ export function CustomerFormDialog({
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<CustomerForm>({
     resolver: zodResolver(customerForm),
@@ -38,7 +40,16 @@ export function CustomerFormDialog({
   });
 
   const onSubmit = handleSubmit((values) => {
-    mutation.mutate(values, { onSuccess: onClose });
+    mutation.mutate(values, {
+      onSuccess: onClose,
+      onError: (e) => {
+        // Surface a duplicate-email conflict (409) inline on the field.
+        const msg = errorMessage(e);
+        if (/e-?mail/i.test(msg) && /exist|already|taken|in use|conflict/i.test(msg)) {
+          setError("email", { message: msg });
+        }
+      },
+    });
   });
 
   return (

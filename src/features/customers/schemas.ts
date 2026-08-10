@@ -25,10 +25,31 @@ export const customerSchema = z
 
 export type Customer = z.infer<typeof customerSchema>;
 
+// Requires a proper domain with a TLD — zod's .email() accepts "a@b", which QA flagged.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// Digits with optional +, spaces, hyphens, parentheses; 7–20 chars.
+const PHONE_RE = /^\+?[\d\s()-]{7,20}$/;
+// Allow people AND business names (letters, numbers, spaces, . , ' & ( ) -) but
+// require at least one letter, so pure numbers/symbols are rejected.
+const NAME_ALLOWED_RE = /^[\p{L}\p{N}\s.,'&()-]+$/u;
+
 export const customerForm = z.object({
-  name: z.string().trim().min(1, "Name is required"),
-  email: z.union([z.string().trim().email("Enter a valid email"), z.literal("")]).optional(),
-  phone: z.string().trim().optional(),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Name is required")
+    .refine((v) => /\p{L}/u.test(v), { message: "Name must include a letter" })
+    .refine((v) => NAME_ALLOWED_RE.test(v), { message: "Name contains invalid characters" }),
+  email: z
+    .string()
+    .trim()
+    .optional()
+    .refine((v) => !v || EMAIL_RE.test(v), { message: "Enter a valid email" }),
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .refine((v) => !v || PHONE_RE.test(v), { message: "Enter a valid phone number" }),
   notes: z.string().trim().optional(),
 });
 export type CustomerForm = z.infer<typeof customerForm>;
