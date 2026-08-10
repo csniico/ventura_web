@@ -15,8 +15,6 @@ import { AppointmentFormDialog } from "@/features/appointments/appointment-form-
 
 type DialogKey = "customer" | "resource" | "order" | "invoice" | "appointment";
 
-const DISMISS_KEY = "ventura.getStartedDismissed";
-
 interface Step {
   key: string;
   done: (s: SetupStatus) => boolean;
@@ -84,24 +82,20 @@ const STEPS: Step[] = [
 
 export function GetStarted() {
   const setup = useSetupStatus();
-  const [dismissed, setDismissed] = useState(
-    () => typeof window !== "undefined" && window.localStorage.getItem(DISMISS_KEY) === "1",
-  );
+  // Non-persistent: closing tidies the current view, but visibility is driven
+  // by /setup/status — it returns next session while setup is incomplete, and
+  // is gone for good once complete. (No backend "dismissed" flag exists.)
+  const [hidden, setHidden] = useState(false);
   const [dialog, setDialog] = useState<DialogKey | null>(null);
 
   const s = setup.data;
   if (!s) return null;
 
   const done = STEPS.filter((step) => step.done(s)).length;
-  if (dismissed || s.complete || done === STEPS.length) return null;
+  if (hidden || s.complete || done === STEPS.length) return null;
 
   const pct = Math.round((done / STEPS.length) * 100);
   const nextKey = STEPS.find((step) => !step.done(s) && !step.locked?.(s))?.key;
-
-  const dismiss = () => {
-    window.localStorage.setItem(DISMISS_KEY, "1");
-    setDismissed(true);
-  };
 
   return (
     <>
@@ -114,9 +108,9 @@ export function GetStarted() {
             </p>
           </div>
           <button
-            onClick={dismiss}
+            onClick={() => setHidden(true)}
             className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
-            aria-label="Dismiss"
+            aria-label="Hide"
           >
             <X className="size-4" />
           </button>
