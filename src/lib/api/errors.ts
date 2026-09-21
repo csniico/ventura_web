@@ -9,6 +9,7 @@ export type FailureKind =
   | "no-business"
   | "validation"
   | "not-found"
+  | "conflict"
   | "rate-limit"
   | "server"
   | "unknown";
@@ -50,6 +51,9 @@ export function failureFromResponse(status: number, body: unknown): ApiError {
   if (status === 400 || status === 422) {
     return new ApiError("validation", message || "Invalid request.", status);
   }
+  // 409 is a business-rule refusal the user can act on (e.g. "Insufficient
+  // stock for this adjustment"), not a server fault — keep the API's message.
+  if (status === 409) return new ApiError("conflict", message, status);
   // The API throttles; say so plainly instead of "Server error."
   if (status === 429) {
     return new ApiError("rate-limit", "Too many requests — please slow down and try again.", status);

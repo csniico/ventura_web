@@ -6,7 +6,6 @@ import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/field";
 import { Select, Textarea } from "@/components/ui/form-controls";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/cn";
 import {
   manualReasons,
   reasonLabels,
@@ -36,7 +35,6 @@ export function StockAdjustDialog({
     register,
     handleSubmit,
     control,
-    setValue,
     formState: { errors },
   } = useForm<StockAdjustmentForm>({
     resolver: zodResolver(stockAdjustmentForm),
@@ -64,24 +62,23 @@ export function StockAdjustDialog({
       description={`${resource.name} — ${resource.availableQuantity} on hand`}
     >
       <form onSubmit={onSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Direction">
-          {(["add", "remove"] as const).map((d) => (
-            <button
-              key={d}
-              type="button"
-              aria-pressed={direction === d}
-              onClick={() => setValue("direction", d)}
-              className={cn(
-                "h-11 rounded-xl border text-sm font-medium capitalize transition-colors",
-                direction === d
-                  ? "border-primary-500 bg-primary-50 text-primary-700"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50",
-              )}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
+        {/* Same sr-only radio + has-checked pattern as the resource form's
+            type toggle, so the two read identically. */}
+        <Field label="Direction">
+          {() => (
+            <div className="grid grid-cols-2 gap-2">
+              {(["add", "remove"] as const).map((d) => (
+                <label
+                  key={d}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm font-medium capitalize text-zinc-600 transition-colors has-checked:border-primary-500 has-checked:bg-primary-50 has-checked:text-primary-700"
+                >
+                  <input type="radio" value={d} className="sr-only" {...register("direction")} />
+                  {d}
+                </label>
+              ))}
+            </div>
+          )}
+        </Field>
 
         <Field
           label="Quantity"

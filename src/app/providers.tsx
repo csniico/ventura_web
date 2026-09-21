@@ -21,7 +21,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
               if (error instanceof ApiError) {
                 // "rate-limit" included: retrying a 429 only deepens the throttle.
                 if (
-                  ["auth", "no-business", "validation", "not-found", "rate-limit"].includes(
+                  ["auth", "no-business", "validation", "not-found", "conflict", "rate-limit"].includes(
                     error.kind,
                   )
                 ) {

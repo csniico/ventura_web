@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogFooter } from "@/components/ui/dialog";
@@ -56,6 +58,8 @@ export function ResourceFormDialog({
 
   const type = useWatch({ control, name: "type" });
   const units = useFieldArray({ control, name: "units" });
+  const baseUnit = useWatch({ control, name: "baseUnit" });
+  const baseUnitLabel = (baseUnit || DEFAULT_BASE_UNIT).trim() + "s";
   const primaryImage = useWatch({ control, name: "primaryImage" });
 
   const onSubmit = handleSubmit((values) => {
@@ -194,57 +198,71 @@ export function ResourceFormDialog({
                   Optional — add a carton, crate or pack to sell in bulk.
                 </p>
               ) : (
-                <ul className="space-y-2">
-                  {units.fields.map((field, index) => (
-                    <li key={field.id} className="flex items-start gap-2">
-                      <div className="grid flex-1 grid-cols-3 gap-2">
-                        <Input
-                          placeholder="carton"
-                          aria-label="Unit name"
-                          invalid={Boolean(errors.units?.[index]?.name)}
-                          {...register(`units.${index}.name`)}
-                        />
-                        <Input
-                          type="number"
-                          min="1"
-                          step="1"
-                          aria-label="Base units per one"
-                          invalid={Boolean(errors.units?.[index]?.factor)}
-                          {...register(`units.${index}.factor`, { valueAsNumber: true })}
-                        />
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          aria-label="Price"
-                          invalid={Boolean(errors.units?.[index]?.price)}
-                          {...register(`units.${index}.price`, { valueAsNumber: true })}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => units.remove(index)}
-                        aria-label="Remove unit"
-                        className="mt-2.5 rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
-                      >
-                        <X className="size-4" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                <ul className="space-y-3">
+                  {units.fields.map((field, index) => {
+                    const rowErrors = errors.units?.[index];
+                    return (
+                      <li key={field.id} className="flex items-start gap-2">
+                        <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-3">
+                          <LabelledCell label="Unit name" className="col-span-2 sm:col-span-1">
+                            {(id) => (
+                              <Input
+                                id={id}
+                                placeholder="carton"
+                                invalid={Boolean(rowErrors?.name)}
+                                {...register(`units.${index}.name`)}
+                              />
+                            )}
+                          </LabelledCell>
+                          <LabelledCell
+                            label={`How many ${baseUnitLabel}`}
+                          >
+                            {(id) => (
+                              <Input
+                                id={id}
+                                type="number"
+                                min="1"
+                                step="1"
+                                invalid={Boolean(rowErrors?.factor)}
+                                {...register(`units.${index}.factor`, { valueAsNumber: true })}
+                              />
+                            )}
+                          </LabelledCell>
+                          <LabelledCell label="Price for one">
+                            {(id) => (
+                              <Input
+                                id={id}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                invalid={Boolean(rowErrors?.price)}
+                                {...register(`units.${index}.price`, { valueAsNumber: true })}
+                              />
+                            )}
+                          </LabelledCell>
 
-              {units.fields.length > 0 && (
-                <p className="text-xs text-zinc-500">
-                  Name · base units per one · price for one.
-                </p>
-              )}
-              {errors.units?.[0] && (
-                <p className="text-xs text-red-600">
-                  {errors.units[0].name?.message ??
-                    errors.units[0].factor?.message ??
-                    errors.units[0].price?.message}
-                </p>
+                          {/* Errors for this row only — a bad value three rows
+                              down used to show a red border and no message. */}
+                          {(rowErrors?.name || rowErrors?.factor || rowErrors?.price) && (
+                            <p className="col-span-2 text-xs text-red-600 sm:col-span-3">
+                              {rowErrors.name?.message ??
+                                rowErrors.factor?.message ??
+                                rowErrors.price?.message}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => units.remove(index)}
+                          aria-label={`Remove unit ${index + 1}`}
+                          className="mt-6 rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
             </div>
           </>
@@ -266,5 +284,30 @@ export function ResourceFormDialog({
         </DialogFooter>
       </form>
     </Dialog>
+  );
+}
+
+/**
+ * A compact labelled cell for the bulk-units grid. The units rows are a table
+ * in spirit, so each column needs a visible heading — an aria-label alone left
+ * you guessing what the two number fields meant.
+ */
+function LabelledCell({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: (id: string) => React.ReactNode;
+}) {
+  const id = useId();
+  return (
+    <div className={className}>
+      <label htmlFor={id} className="mb-1 block text-xs font-medium text-zinc-500">
+        {label}
+      </label>
+      {children(id)}
+    </div>
   );
 }
