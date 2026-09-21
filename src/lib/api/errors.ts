@@ -9,6 +9,7 @@ export type FailureKind =
   | "no-business"
   | "validation"
   | "not-found"
+  | "rate-limit"
   | "server"
   | "unknown";
 
@@ -48,6 +49,10 @@ export function failureFromResponse(status: number, body: unknown): ApiError {
   if (status === 404) return new ApiError("not-found", message, status);
   if (status === 400 || status === 422) {
     return new ApiError("validation", message || "Invalid request.", status);
+  }
+  // The API throttles; say so plainly instead of "Server error."
+  if (status === 429) {
+    return new ApiError("rate-limit", "Too many requests — please slow down and try again.", status);
   }
   return new ApiError("server", message || "Server error.", status);
 }
