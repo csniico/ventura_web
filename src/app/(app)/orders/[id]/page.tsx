@@ -104,7 +104,13 @@ export default function OrderDetailPage() {
                       <p className="text-xs capitalize text-zinc-400">{it.type}</p>
                     </Td>
                     <Td className="text-right text-zinc-600">{money(it.price)}</Td>
-                    <Td className="text-right text-zinc-600">{it.quantity}</Td>
+                    <Td className="text-right text-zinc-600">
+                      {it.quantity}
+                      {/* Only worth naming when the line was sold in a bulk unit. */}
+                      {it.unit && (it.unitFactor ?? 1) > 1 && (
+                        <span className="text-xs text-zinc-400"> {it.unit}</span>
+                      )}
+                    </Td>
                     <Td className="text-right font-medium text-zinc-900">{money(it.subTotal)}</Td>
                   </tr>
                 ))}
