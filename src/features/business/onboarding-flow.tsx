@@ -13,6 +13,7 @@ import { useCategories, useCreateBusiness } from "@/features/business/hooks";
 import { onboardingNameForm, type OnboardingNameForm } from "@/features/business/schemas";
 import { useAuthStore } from "@/features/auth/store";
 import { useLogout } from "@/features/auth/hooks";
+import { useUpdateProfile } from "@/features/user/hooks";
 import { errorMessage } from "@/lib/api/message";
 
 /**
@@ -26,11 +27,25 @@ export function OnboardingFlow() {
   const categories = useCategories();
   const create = useCreateBusiness();
   const logout = useLogout();
+  const updateProfile = useUpdateProfile();
+
+  /**
+   * Passwordless sign-in auto-creates the account and derives firstName from
+   * the email's local part, so "kwame.asante@…" becomes "kwame.asante" and
+   * that is what the app greets them by. Detect that case and ask for a real
+   * name here — the one screen every new account passes through. We can't ask
+   * at sign-in: /auth/sign-in-email deliberately gives the same response for a
+   * new and an existing address, so the client cannot tell them apart.
+   */
+  const derivedName =
+    Boolean(user) &&
+    !user?.lastName &&
+    user?.firstName.toLowerCase() === user?.email.split("@")[0]?.toLowerCase();
 
   const [selected, setSelected] = useState<string[]>([]);
   const form = useForm<OnboardingNameForm>({
     resolver: zodResolver(onboardingNameForm),
-    defaultValues: { name: "" },
+    defaultValues: { name: "", yourName: "" },
   });
 
   const toggle = (category: string) =>
@@ -38,7 +53,14 @@ export function OnboardingFlow() {
       prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
     );
 
-  const onSubmit = form.handleSubmit(({ name }) => {
+  const onSubmit = form.handleSubmit(({ name, yourName }) => {
+    // Save the name first, but never block business creation on it — the
+    // business is what the gate is waiting for.
+    const trimmed = yourName?.trim();
+    if (derivedName && trimmed) {
+      const [first, ...rest] = trimmed.split(/\s+/);
+      updateProfile.mutate({ firstName: first, lastName: rest.join(" ") || null });
+    }
     create.mutate(
       { name, categories: selected },
       {
@@ -71,7 +93,7 @@ export function OnboardingFlow() {
             <Store className="size-6" />
           </span>
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-            Welcome{user?.firstName ? `, ${user.firstName}` : ""} 👋
+            Welcome{!derivedName && user?.firstName ? `, ${user.firstName}` : ""} 👋
           </h1>
           <p className="text-sm text-zinc-500">
             Let&apos;s set up your business so you can start managing customers, orders and invoices.
@@ -80,11 +102,29 @@ export function OnboardingFlow() {
 
         <Card className="p-6">
           <form onSubmit={onSubmit} className="space-y-6" noValidate>
+            {derivedName && (
+              <Field
+                label="Your name"
+                error={form.formState.errors.yourName?.message}
+                hint="How we'll address you in the app."
+              >
+                {({ id, invalid }) => (
+                  <Input
+                    id={id}
+                    autoFocus
+                    placeholder="e.g. Ada Lovelace"
+                    invalid={invalid}
+                    {...form.register("yourName")}
+                  />
+                )}
+              </Field>
+            )}
+
             <Field label="Business name" error={form.formState.errors.name?.message}>
               {({ id, invalid }) => (
                 <Input
                   id={id}
-                  autoFocus
+                  autoFocus={!derivedName}
                   placeholder="e.g. Acme Studio"
                   invalid={invalid}
                   {...form.register("name")}
