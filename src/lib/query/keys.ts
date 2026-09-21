@@ -34,6 +34,13 @@ export const queryKeys = {
     all: ["appointments"] as const,
     list: (range: { from?: string; to?: string }) => ["appointments", "list", range] as const,
   },
+  admin: {
+    all: ["admin"] as const,
+    isAdmin: ["admin", "is-admin"] as const,
+    users: ["admin", "users"] as const,
+    user: (id: string) => ["admin", "users", id] as const,
+    profile: ["admin", "profile"] as const,
+  },
   dashboard: (range: string) => ["dashboard", "summary", range] as const,
   search: (q: string) => ["search", q] as const,
 };
