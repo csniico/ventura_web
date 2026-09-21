@@ -8,7 +8,7 @@ import { Card, FullPageSpinner } from "@/components/ui/misc";
 import { StatusPill, Skeleton, TableWrap, Th, Td } from "@/components/ui/data";
 import { Button } from "@/components/ui/button";
 import { money, formatDateTime } from "@/lib/format";
-import { orderTone } from "@/lib/status";
+import { orderTone, orderNextStatuses } from "@/lib/status";
 import { useOrder, useUpdateOrderStatus } from "@/features/orders/hooks";
 import { OrderCreateDialog } from "@/features/orders/order-create-dialog";
 
@@ -32,6 +32,11 @@ export default function OrderDetailPage() {
   }
 
   const o = order.data;
+  // An order already on an invoice can't be cancelled — cancel the invoice
+  // first, which detaches its orders. A completed order can only be cancelled.
+  const nextStatuses = orderNextStatuses(o.status, Boolean(o.invoiceId));
+  const canComplete = nextStatuses.includes("completed");
+  const canCancel = nextStatuses.includes("cancelled");
 
   return (
     <div className="space-y-6">
@@ -52,26 +57,28 @@ export default function OrderDetailPage() {
           <div className="flex items-center gap-2">
             <StatusPill tone={orderTone(o.status)}>{o.status}</StatusPill>
             {o.status === "pending" && (
-              <>
-                <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
-                  <Pencil className="size-4" /> Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  loading={updateStatus.isPending}
-                  onClick={() => updateStatus.mutate({ id: o.id, status: "completed" })}
-                >
-                  <Check className="size-4" /> Complete
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => updateStatus.mutate({ id: o.id, status: "cancelled" })}
-                >
-                  <X className="size-4" /> Cancel
-                </Button>
-              </>
+              <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>
+                <Pencil className="size-4" /> Edit
+              </Button>
+            )}
+            {canComplete && (
+              <Button
+                size="sm"
+                variant="secondary"
+                loading={updateStatus.isPending}
+                onClick={() => updateStatus.mutate({ id: o.id, status: "completed" })}
+              >
+                <Check className="size-4" /> Complete
+              </Button>
+            )}
+            {canCancel && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => updateStatus.mutate({ id: o.id, status: "cancelled" })}
+              >
+                <X className="size-4" /> Cancel
+              </Button>
             )}
           </div>
         </div>
