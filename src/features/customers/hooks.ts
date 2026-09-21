@@ -93,3 +93,31 @@ export function useDeleteCustomer() {
     onError: (e) => toast.error(errorMessage(e)),
   });
 }
+
+/**
+ * Delete several customers at once. There is no bulk endpoint, so these run as
+ * concurrent DELETE /customers/:id calls; `allSettled` means one failure
+ * doesn't hide the rest, and the toast reports what actually happened.
+ */
+export function useDeleteCustomers() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const results = await Promise.allSettled(ids.map((id) => api.deleteCustomer(id)));
+      const failed = results.filter((r) => r.status === "rejected").length;
+      return { requested: ids.length, failed };
+    },
+    onSuccess: ({ requested, failed }) => {
+      qc.invalidateQueries({ queryKey: queryKeys.customers.all });
+      const deleted = requested - failed;
+      if (failed === 0) {
+        toast.success(`Deleted ${deleted} customer${deleted === 1 ? "" : "s"}`);
+      } else if (deleted === 0) {
+        toast.error(`Couldn't delete ${failed} customer${failed === 1 ? "" : "s"}`);
+      } else {
+        toast.warning(`Deleted ${deleted} · ${failed} failed`);
+      }
+    },
+    onError: (e) => toast.error(errorMessage(e)),
+  });
+}
