@@ -77,7 +77,10 @@ export function InvoiceDocument({
             items.map((it, idx) => (
               <tr key={idx} className="border-b border-zinc-100">
                 <td className="px-3 py-2">{it.name}</td>
-                <td className="px-3 py-2 text-right">{it.quantity}</td>
+                <td className="px-3 py-2 text-right">
+                  {it.quantity}
+                  {it.unit && (it.unitFactor ?? 1) > 1 ? ` ${it.unit}` : ""}
+                </td>
                 <td className="px-3 py-2 text-right">{money(it.price)}</td>
                 <td className="px-3 py-2 text-right">{money(it.subTotal)}</td>
               </tr>

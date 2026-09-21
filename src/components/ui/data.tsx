@@ -123,11 +123,16 @@ export function Td({ className, children }: { className?: string; children?: Rea
 export function IconButton({
   label,
   danger,
+  disabled,
+  title,
   onClick,
   children,
 }: {
   label: string;
   danger?: boolean;
+  disabled?: boolean;
+  /** Tooltip — useful for explaining why the action is disabled. */
+  title?: string;
   onClick: () => void;
   children: React.ReactNode;
 }) {
@@ -135,10 +140,14 @@ export function IconButton({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-label={label}
+      title={title ?? label}
       className={cn(
-        "rounded-lg p-2 text-zinc-400 transition-colors hover:bg-zinc-100",
-        danger ? "hover:text-red-600" : "hover:text-zinc-700",
+        "rounded-lg p-2 text-zinc-400 transition-colors",
+        disabled
+          ? "cursor-not-allowed opacity-40"
+          : cn("hover:bg-zinc-100", danger ? "hover:text-red-600" : "hover:text-zinc-700"),
       )}
     >
       {children}

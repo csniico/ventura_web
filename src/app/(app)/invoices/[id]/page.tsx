@@ -9,11 +9,11 @@ import { StatusPill } from "@/components/ui/data";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/form-controls";
 import { money, formatDate } from "@/lib/format";
-import { invoiceTone, labelize } from "@/lib/status";
+import { invoiceTone, invoiceNextStatuses, labelize } from "@/lib/status";
 import { useInvoice, useSendInvoice, useUpdateInvoiceStatus } from "@/features/invoices/hooks";
 import { useOrdersByIds } from "@/features/orders/hooks";
 import { useMyBusiness } from "@/features/business/hooks";
-import { invoiceStatus, type InvoiceStatus } from "@/features/invoices/schemas";
+import type { InvoiceStatus } from "@/features/invoices/schemas";
 import { PaymentDialog } from "@/features/invoices/payment-dialog";
 import { InvoiceDocument } from "@/features/invoices/invoice-document";
 
@@ -43,6 +43,8 @@ export default function InvoiceDetailPage() {
 
   const i = invoice.data;
   const isOpen = i.status !== "PAID" && i.status !== "CANCELLED";
+  // Empty for a cancelled invoice (terminal) — the control hides entirely.
+  const nextStatuses = invoiceNextStatuses(i.status);
 
   return (
     <div className="space-y-6">
@@ -171,19 +173,29 @@ export default function InvoiceDetailPage() {
               {i.sentAt && <Line label="Sent" value={formatDate(i.sentAt)} />}
               <Line label="Orders" value={`${i.orderIds.length} linked`} />
             </dl>
-            <div className="mt-4">
-              <label className="mb-1.5 block text-xs font-medium text-zinc-500">Change status</label>
-              <Select
-                value={i.status}
-                onChange={(e) => updateStatus.mutate({ id: i.id, status: e.target.value as InvoiceStatus })}
-              >
-                {invoiceStatus.options.map((s) => (
-                  <option key={s} value={s}>
-                    {labelize(s)}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            {nextStatuses.length > 0 && (
+              <div className="mt-4">
+                <label className="mb-1.5 block text-xs font-medium text-zinc-500">
+                  Change status
+                </label>
+                <Select
+                  value={i.status}
+                  onChange={(e) =>
+                    updateStatus.mutate({ id: i.id, status: e.target.value as InvoiceStatus })
+                  }
+                >
+                  {/* Current status is the resting value; only the transitions the
+                      backend allows are selectable. Paid / Partially paid are
+                      reached by recording a payment, never set directly. */}
+                  <option value={i.status}>{labelize(i.status)}</option>
+                  {nextStatuses.map((s) => (
+                    <option key={s} value={s}>
+                      {labelize(s)}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
           </Card>
         </div>
       </div>

@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import { LogOut, Menu, X } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { Logo } from "@/components/ui/misc";
-import { NAV_ITEMS } from "@/components/app/nav";
+import { NAV_ITEMS, ADMIN_NAV_ITEMS, type NavItem } from "@/components/app/nav";
+import { useIsPlatformAdmin } from "@/features/admin/hooks";
 import { useAuthStore } from "@/features/auth/store";
 import { useLogout } from "@/features/auth/hooks";
 import { useMyBusiness } from "@/features/business/hooks";
@@ -14,10 +15,40 @@ import { GlobalSearch } from "@/components/app/global-search";
 import { initials } from "@/lib/format";
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  const admin = useIsPlatformAdmin();
+  return (
+    <div className="space-y-4">
+      <NavGroup items={NAV_ITEMS} onNavigate={onNavigate} />
+      {/* Only shown once the API confirms the privilege — see AdminGate. */}
+      {admin.data && (
+        <NavGroup
+          items={ADMIN_NAV_ITEMS}
+          heading="Platform"
+          onNavigate={onNavigate}
+        />
+      )}
+    </div>
+  );
+}
+
+function NavGroup({
+  items,
+  heading,
+  onNavigate,
+}: {
+  items: NavItem[];
+  heading?: string;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
   return (
     <nav className="flex flex-col gap-1">
-      {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+      {heading && (
+        <p className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+          {heading}
+        </p>
+      )}
+      {items.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`);
         return (
           <Link

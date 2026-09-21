@@ -4,14 +4,17 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Package, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Package, Pencil, SlidersHorizontal, Trash2 } from "lucide-react";
 import { Card, FullPageSpinner } from "@/components/ui/misc";
 import { StatusPill } from "@/components/ui/data";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { money } from "@/lib/format";
 import { useResource, useDeleteResource } from "@/features/resources/hooks";
+import { DEFAULT_BASE_UNIT } from "@/features/resources/schemas";
 import { ResourceFormDialog } from "@/features/resources/resource-form-dialog";
+import { StockAdjustDialog } from "@/features/resources/stock-adjust-dialog";
+import { StockHistory } from "@/features/resources/stock-history";
 
 export default function ResourceDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,6 +23,7 @@ export default function ResourceDetailPage() {
   const del = useDeleteResource();
   const [editOpen, setEditOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [adjustOpen, setAdjustOpen] = useState(false);
 
   if (resource.isLoading) return <FullPageSpinner />;
   if (resource.isError || !resource.data) {
@@ -68,6 +72,11 @@ export default function ResourceDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          {isProduct && (
+            <Button variant="secondary" size="sm" onClick={() => setAdjustOpen(true)}>
+              <SlidersHorizontal className="size-4" /> Adjust stock
+            </Button>
+          )}
           <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
             <Pencil className="size-4" /> Edit
           </Button>
@@ -90,7 +99,7 @@ export default function ResourceDetailPage() {
                 <div className="flex items-center justify-between">
                   <dt className="text-zinc-500">In stock</dt>
                   <dd className="flex items-center gap-2 text-zinc-900">
-                    {r.availableQuantity}
+                    {r.availableQuantity} {r.baseUnit || DEFAULT_BASE_UNIT}
                     {outOfStock ? (
                       <StatusPill tone="danger">Out</StatusPill>
                     ) : r.isLowStock ? (
@@ -105,6 +114,28 @@ export default function ResourceDetailPage() {
               </>
             )}
           </dl>
+
+          {/* Bulk units sell as several base units at their own price (VT-202). */}
+          {isProduct && r.units.length > 0 && (
+            <div className="mt-5 border-t border-zinc-100 pt-4">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                Bulk units
+              </h3>
+              <ul className="space-y-1.5 text-sm">
+                {r.units.map((u) => (
+                  <li key={u.name} className="flex justify-between gap-3">
+                    <span className="text-zinc-700">
+                      {u.name}{" "}
+                      <span className="text-zinc-400">
+                        ({u.factor} {r.baseUnit || DEFAULT_BASE_UNIT})
+                      </span>
+                    </span>
+                    <span className="font-medium text-zinc-900">{money(u.price)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </Card>
 
         <div className="space-y-6 lg:col-span-2">
@@ -120,10 +151,15 @@ export default function ResourceDetailPage() {
               <p className="text-sm leading-relaxed text-zinc-600">{r.notes}</p>
             </Card>
           )}
+          {/* Services have no stock, so no ledger. */}
+          {isProduct && <StockHistory resourceId={r.id} />}
         </div>
       </div>
 
       <ResourceFormDialog open={editOpen} onClose={() => setEditOpen(false)} resource={r} />
+      {isProduct && (
+        <StockAdjustDialog open={adjustOpen} onClose={() => setAdjustOpen(false)} resource={r} />
+      )}
       <ConfirmDialog
         open={deleting}
         onClose={() => setDeleting(false)}

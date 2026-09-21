@@ -9,12 +9,15 @@ import { Button } from "@/components/ui/button";
 import { money } from "@/lib/format";
 import { useCustomers } from "@/features/customers/hooks";
 import { useResources } from "@/features/resources/hooks";
+import { DEFAULT_BASE_UNIT } from "@/features/resources/schemas";
 import { useCreateOrder, useUpdateOrder } from "./hooks";
 import type { Order } from "./schemas";
 
 interface Line {
   resourceId: string;
   quantity: number;
+  /** Empty means the product's base unit. */
+  unit: string;
 }
 
 export function OrderCreateDialog({
@@ -51,21 +54,40 @@ function OrderForm({ order, onDone }: { order?: Order | null; onDone: () => void
 
   const [customerId, setCustomerId] = useState(order?.customerId ?? "");
   const [lines, setLines] = useState<Line[]>(
-    order ? order.items.map((it) => ({ resourceId: it.resourceId, quantity: it.quantity })) : [{ resourceId: "", quantity: 1 }],
+    order
+      ? order.items.map((it) => ({
+          resourceId: it.resourceId,
+          quantity: it.quantity,
+          unit: it.unit ?? "",
+        }))
+      : [{ resourceId: "", quantity: 1, unit: "" }],
   );
   const [error, setError] = useState<string | null>(null);
 
-  const priceOf = useMemo(() => {
-    const map = new Map((resources.data?.data ?? []).map((r) => [r.id, r.price]));
-    return (id: string) => map.get(id) ?? 0;
-  }, [resources.data]);
+  const byId = useMemo(
+    () => new Map((resources.data?.data ?? []).map((r) => [r.id, r])),
+    [resources.data],
+  );
 
-  const total = lines.reduce((sum, l) => sum + priceOf(l.resourceId) * l.quantity, 0);
+  /** A bulk unit carries its own price; the base unit uses the item's price. */
+  function unitPrice(line: Line): number {
+    const resource = byId.get(line.resourceId);
+    if (!resource) return 0;
+    const bulk = resource.units.find((u) => u.name === line.unit);
+    return bulk ? bulk.price : resource.price;
+  }
+
+  const total = lines.reduce((sum, l) => sum + unitPrice(l) * l.quantity, 0);
 
   function submit() {
     const items = lines
       .filter((l) => l.resourceId && l.quantity > 0)
-      .map((l) => ({ resourceId: l.resourceId, quantity: l.quantity }));
+      .map((l) => ({
+        resourceId: l.resourceId,
+        quantity: l.quantity,
+        // Omit the unit entirely for the base unit — the server resolves it.
+        ...(l.unit ? { unit: l.unit } : {}),
+      }));
     if (!editing && !customerId) return setError("Select a customer");
     if (items.length === 0) return setError("Add at least one item");
 
@@ -100,7 +122,10 @@ function OrderForm({ order, onDone }: { order?: Order | null; onDone: () => void
                 <Select
                   value={line.resourceId}
                   onChange={(e) =>
-                    setLines((ls) => ls.map((l, j) => (j === i ? { ...l, resourceId: e.target.value } : l)))
+                    setLines((ls) =>
+                      // Reset the unit — it belongs to the previously picked item.
+                      ls.map((l, j) => (j === i ? { ...l, resourceId: e.target.value, unit: "" } : l)),
+                    )
                   }
                 >
                   <option value="">Select item…</option>
@@ -110,6 +135,32 @@ function OrderForm({ order, onDone }: { order?: Order | null; onDone: () => void
                     </option>
                   ))}
                 </Select>
+
+                {/* Only products with bulk units defined offer a choice; the
+                    base unit is the default and is sent as no unit at all. */}
+                {(byId.get(line.resourceId)?.units.length ?? 0) > 0 && (
+                  <div className="mt-2">
+                    <Select
+                      aria-label="Unit"
+                      value={line.unit}
+                      onChange={(e) =>
+                        setLines((ls) =>
+                          ls.map((l, j) => (j === i ? { ...l, unit: e.target.value } : l)),
+                        )
+                      }
+                    >
+                      <option value="">
+                        {byId.get(line.resourceId)?.baseUnit || DEFAULT_BASE_UNIT} ·{" "}
+                        {money(byId.get(line.resourceId)?.price ?? 0)}
+                      </option>
+                      {byId.get(line.resourceId)?.units.map((u) => (
+                        <option key={u.name} value={u.name}>
+                          {u.name} ({u.factor}) · {money(u.price)}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
               </div>
               <input
                 type="number"
@@ -135,7 +186,7 @@ function OrderForm({ order, onDone }: { order?: Order | null; onDone: () => void
           ))}
           <button
             type="button"
-            onClick={() => setLines((ls) => [...ls, { resourceId: "", quantity: 1 }])}
+            onClick={() => setLines((ls) => [...ls, { resourceId: "", quantity: 1, unit: "" }])}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700"
           >
             <Plus className="size-4" /> Add item

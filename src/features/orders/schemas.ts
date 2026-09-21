@@ -9,6 +9,10 @@ const orderItemSchema = z.object({
   name: z.string(),
   price: z.number(),
   quantity: z.number(),
+  /** The sell unit snapshotted on the line (VT-202); base unit by default. */
+  unit: z.string().nullable().optional(),
+  /** Base units per one `unit` — stock moves by quantity * this. */
+  unitFactor: z.number().nullable().optional(),
   subTotal: z.number(),
 });
 export type OrderItem = z.infer<typeof orderItemSchema>;
@@ -42,11 +46,20 @@ export const orderSchema = z
 
 export type Order = z.infer<typeof orderSchema>;
 
-/** Client sends only resourceId + quantity per item; server snapshots the rest. */
+/**
+ * Client sends resourceId + quantity (and optionally a named bulk unit) per
+ * item; the server snapshots name, price, unit and unitFactor.
+ */
 export const createOrderInput = z.object({
   customerId: z.string().min(1, "Select a customer"),
   items: z
-    .array(z.object({ resourceId: z.string().min(1), quantity: z.number().int().min(1) }))
+    .array(
+      z.object({
+        resourceId: z.string().min(1),
+        quantity: z.number().int().min(1),
+        unit: z.string().optional(),
+      }),
+    )
     .min(1, "Add at least one item"),
 });
 export type CreateOrderInput = z.infer<typeof createOrderInput>;

@@ -38,6 +38,8 @@ export type CreateBusinessForm = z.infer<typeof createBusinessInput>;
 /** Form schema for the onboarding screen (categories are managed separately). */
 export const onboardingNameForm = z.object({
   name: z.string().trim().min(2, "Business name is required"),
+  /** Only collected when the account's name was derived from its email. */
+  yourName: z.string().trim().optional(),
 });
 export type OnboardingNameForm = z.infer<typeof onboardingNameForm>;
 

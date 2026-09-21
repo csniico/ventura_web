@@ -30,7 +30,11 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 import { useDebounced } from "@/lib/hooks";
 import { initials, tint, formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
-import { useAllCustomers, useDeleteCustomer } from "@/features/customers/hooks";
+import {
+  useAllCustomers,
+  useDeleteCustomer,
+  useDeleteCustomers,
+} from "@/features/customers/hooks";
 import type { Customer } from "@/features/customers/schemas";
 import { CustomerFormDialog } from "@/features/customers/customer-form-dialog";
 import { ImportCustomersDialog } from "@/features/customers/import-dialog";
@@ -42,6 +46,7 @@ type SortDir = "asc" | "desc";
 export default function CustomersPage() {
   const all = useAllCustomers();
   const del = useDeleteCustomer();
+  const delMany = useDeleteCustomers();
 
   const [search, setSearch] = useState("");
   const q = useDebounced(search).trim().toLowerCase();
@@ -52,6 +57,8 @@ export default function CustomersPage() {
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<Customer | null>(null);
   const [deleting, setDeleting] = useState<Customer | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const list = useMemo(() => all.data ?? [], [all.data]);
 
@@ -93,6 +100,35 @@ export default function CustomersPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const rows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  // Ids that have left the list (deleted, or filtered out by a search) are
+  // dropped on read rather than pruned in an effect, so the toolbar count
+  // always matches what is actually selectable without a cascading render.
+  const visible = useMemo(() => {
+    const ids = new Set(filtered.map((c) => c.id));
+    return new Set([...selected].filter((id) => ids.has(id)));
+  }, [filtered, selected]);
+
+  const pageIds = rows.map((c) => c.id);
+  const allOnPageSelected = pageIds.length > 0 && pageIds.every((id) => visible.has(id));
+
+  function toggleOne(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function togglePage() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -136,6 +172,27 @@ export default function CustomersPage() {
         <Stat label="New this month" value={stats.newThisMonth} loading={all.isLoading} />
       </div>
 
+      {/* Selection toolbar replaces the search row while a selection is live. */}
+      {visible.size > 0 ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-primary-200 bg-primary-50 px-4 py-3">
+          <span className="text-sm font-medium text-primary-900">
+            {visible.size} selected
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelected(new Set())}
+            className="text-sm font-medium text-primary-700 hover:underline"
+          >
+            Clear
+          </button>
+          <div className="ml-auto">
+            <Button variant="destructive" size="sm" onClick={() => setBulkDeleting(true)}>
+              <Trash2 className="size-4" /> Delete
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       <div className="max-w-sm">
         <SearchInput
           value={search}
@@ -176,6 +233,15 @@ export default function CustomersPage() {
             <TableWrap>
               <thead>
                 <tr>
+                  <Th className="w-10">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all on this page"
+                      checked={allOnPageSelected}
+                      onChange={togglePage}
+                      className="size-4 cursor-pointer rounded border-zinc-300 text-primary-600 focus:ring-primary-500/50"
+                    />
+                  </Th>
                   <SortableTh label="Name" active={sortKey === "name"} dir={sortDir} onClick={() => toggleSort("name")} />
                   <Th className="hidden sm:table-cell">Contact</Th>
                   <SortableTh
@@ -190,7 +256,22 @@ export default function CustomersPage() {
               </thead>
               <tbody className="divide-y divide-zinc-100">
                 {rows.map((c) => (
-                  <tr key={c.id} className="hover:bg-zinc-50/60">
+                  <tr
+                    key={c.id}
+                    className={cn(
+                      "hover:bg-zinc-50/60",
+                      visible.has(c.id) && "bg-primary-50/60 hover:bg-primary-50",
+                    )}
+                  >
+                    <Td>
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${c.name}`}
+                        checked={visible.has(c.id)}
+                        onChange={() => toggleOne(c.id)}
+                        className="size-4 cursor-pointer rounded border-zinc-300 text-primary-600 focus:ring-primary-500/50"
+                      />
+                    </Td>
                     <Td>
                       <div className="flex items-center gap-3">
                         <span className={cn("grid size-9 place-items-center rounded-full text-xs font-semibold", tint(c.name))}>
@@ -250,6 +331,23 @@ export default function CustomersPage() {
         existingNames={list.map((c) => c.name)}
       />
       <ImportCustomersDialog open={importOpen} onClose={() => setImportOpen(false)} />
+      <ConfirmDialog
+        open={bulkDeleting}
+        onClose={() => setBulkDeleting(false)}
+        onConfirm={() =>
+          delMany.mutate([...visible], {
+            onSuccess: () => {
+              setSelected(new Set());
+              setBulkDeleting(false);
+            },
+          })
+        }
+        title={`Delete ${visible.size} customer${visible.size === 1 ? "" : "s"}`}
+        message={`Remove ${visible.size} selected customer${
+          visible.size === 1 ? "" : "s"
+        }? This can't be undone.`}
+        loading={delMany.isPending}
+      />
       <ConfirmDialog
         open={Boolean(deleting)}
         onClose={() => setDeleting(null)}
