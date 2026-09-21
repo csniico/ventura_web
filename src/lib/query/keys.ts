@@ -15,6 +15,8 @@ export const queryKeys = {
     all: ["resources"] as const,
     list: (params: ListParams & { type?: string }) => ["resources", "list", params] as const,
     detail: (id: string) => ["resources", "detail", id] as const,
+    adjustments: (id: string, params: ListParams) =>
+      ["resources", "adjustments", id, params] as const,
   },
   orders: {
     all: ["orders"] as const,

@@ -79,3 +79,74 @@ export function toUpdatePayload(form: ResourceForm) {
   delete payload.type;
   return payload;
 }
+
+/**
+ * Stock is an append-only ledger (VT-203): every change writes a signed row
+ * with a reason and the resulting balance. `order` / `order_cancel` /
+ * `opening_balance` are written by the backend; only the three manual reasons
+ * below may be sent from here.
+ */
+export const stockAdjustmentReason = z.enum([
+  "opening_balance",
+  "order",
+  "order_cancel",
+  "restock",
+  "correction",
+  "manual",
+]);
+export type StockAdjustmentReason = z.infer<typeof stockAdjustmentReason>;
+
+export const manualReasons = ["restock", "correction", "manual"] as const;
+export type ManualReason = (typeof manualReasons)[number];
+
+export const stockAdjustmentSchema = z
+  .object({
+    id: z.string(),
+    resourceId: z.string(),
+    delta: z.number(),
+    reason: stockAdjustmentReason,
+    balanceAfter: z.number(),
+    note: z.string().nullable().optional(),
+    createdBy: z.string().nullable().optional(),
+    createdAt: z.string(),
+  })
+  .transform((a) => ({
+    id: a.id,
+    resourceId: a.resourceId,
+    delta: a.delta,
+    reason: a.reason,
+    balanceAfter: a.balanceAfter,
+    note: a.note ?? null,
+    /** System rows (order flow, opening balance) have no user. */
+    createdBy: a.createdBy ?? null,
+    createdAt: a.createdAt,
+  }));
+
+export type StockAdjustment = z.infer<typeof stockAdjustmentSchema>;
+
+/** The dialog collects a direction + magnitude; the API wants a signed delta. */
+export const stockAdjustmentForm = z.object({
+  direction: z.enum(["add", "remove"]),
+  quantity: z.number({ message: "Enter a quantity" }).int().min(1, "Must be at least 1"),
+  reason: z.enum(manualReasons),
+  note: z.string().trim().optional(),
+});
+export type StockAdjustmentForm = z.infer<typeof stockAdjustmentForm>;
+
+export function toStockAdjustmentPayload(form: StockAdjustmentForm) {
+  return {
+    delta: form.direction === "remove" ? -form.quantity : form.quantity,
+    reason: form.reason,
+    ...(form.note ? { note: form.note } : {}),
+  };
+}
+
+/** Human labels for ledger rows, including the system-written reasons. */
+export const reasonLabels: Record<StockAdjustmentReason, string> = {
+  opening_balance: "Opening balance",
+  order: "Order",
+  order_cancel: "Order cancelled",
+  restock: "Restock",
+  correction: "Correction",
+  manual: "Manual",
+};
