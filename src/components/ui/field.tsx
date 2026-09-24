@@ -24,6 +24,8 @@ interface FieldProps {
   label: string;
   error?: string;
   hint?: string;
+  /** Marks the field mandatory: shows a red asterisk and flags it for a11y. */
+  required?: boolean;
   children: (props: { id: string; invalid: boolean }) => React.ReactNode;
 }
 
@@ -32,12 +34,17 @@ interface FieldProps {
  * Render-prop passes the generated id + invalid flag down to the control so the
  * field owns the a11y plumbing and the caller stays declarative.
  */
-export function Field({ label, error, hint, children }: FieldProps) {
+export function Field({ label, error, hint, required, children }: FieldProps) {
   const id = useId();
   return (
     <div className="space-y-1.5">
       <label htmlFor={id} className="block text-sm font-medium text-zinc-700">
         {label}
+        {required && (
+          <span className="ml-0.5 text-red-500" aria-hidden="true">
+            *
+          </span>
+        )}
       </label>
       {children({ id, invalid: Boolean(error) })}
       {error ? (

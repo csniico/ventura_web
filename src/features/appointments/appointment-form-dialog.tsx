@@ -7,11 +7,22 @@ import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/field";
 import { Textarea, Select } from "@/components/ui/form-controls";
 import { Button } from "@/components/ui/button";
-import { appointmentForm, recurrenceFrequency, type AppointmentForm, type Appointment } from "./schemas";
+import {
+  appointmentForm,
+  appointmentCreateForm,
+  recurrenceFrequency,
+  type AppointmentForm,
+  type Appointment,
+} from "./schemas";
 import { useCreateAppointment, useUpdateAppointment } from "./hooks";
 
 function pad(n: number) {
   return String(n).padStart(2, "0");
+}
+/** Current local time as a `datetime-local` value — the floor for a new booking. */
+function nowLocalInput(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 function toLocalInput(iso?: string | null): string {
   if (!iso) return "";
@@ -59,12 +70,16 @@ export function AppointmentFormDialog({
     control,
     formState: { errors },
   } = useForm<AppointmentForm>({
-    resolver: zodResolver(appointmentForm),
+    // New bookings can't start in the past; editing keeps the looser rules.
+    resolver: zodResolver(editing ? appointmentForm : appointmentCreateForm),
     values: defaults(appointment),
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "invitees" });
   const recurs = useWatch({ control, name: "recurrenceEnabled" });
+  const startValue = useWatch({ control, name: "start" });
+  // Restrict the picker to now-or-later on create; leave an existing one free.
+  const minStart = editing ? undefined : nowLocalInput();
 
   const onSubmit = handleSubmit((values) => {
     if (editing && appointment) {
@@ -83,21 +98,27 @@ export function AppointmentFormDialog({
       size="lg"
     >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
-        <Field label="Title" error={errors.title?.message}>
+        <Field label="Title" required error={errors.title?.message}>
           {({ id, invalid }) => (
             <Input id={id} invalid={invalid} placeholder="Consultation with Jane" {...register("title")} />
           )}
         </Field>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Starts" error={errors.start?.message}>
+          <Field label="Starts" required error={errors.start?.message}>
             {({ id, invalid }) => (
-              <Input id={id} invalid={invalid} type="datetime-local" {...register("start")} />
+              <Input id={id} invalid={invalid} type="datetime-local" min={minStart} {...register("start")} />
             )}
           </Field>
-          <Field label="Ends" error={errors.end?.message}>
+          <Field label="Ends" required error={errors.end?.message}>
             {({ id, invalid }) => (
-              <Input id={id} invalid={invalid} type="datetime-local" {...register("end")} />
+              <Input
+                id={id}
+                invalid={invalid}
+                type="datetime-local"
+                min={startValue || minStart}
+                {...register("end")}
+              />
             )}
           </Field>
         </div>

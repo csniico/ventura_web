@@ -116,13 +116,13 @@ export function ResourceFormDialog({
           )}
         </Field>
 
-        <Field label="Name" error={errors.name?.message}>
+        <Field label="Name" required error={errors.name?.message}>
           {({ id, invalid }) => (
             <Input id={id} invalid={invalid} placeholder={type === "service" ? "Consultation" : "T-shirt"} {...register("name")} />
           )}
         </Field>
 
-        <Field label="Price (GHS)" error={errors.price?.message}>
+        <Field label="Price (GHS)" required error={errors.price?.message}>
           {({ id, invalid }) => (
             <Input
               id={id}
@@ -137,7 +137,7 @@ export function ResourceFormDialog({
 
         {type === "product" && (
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Quantity" error={errors.availableQuantity?.message}>
+            <Field label="Quantity" required error={errors.availableQuantity?.message}>
               {({ id, invalid }) => (
                 <Input
                   id={id}
