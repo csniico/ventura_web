@@ -101,7 +101,7 @@ function OrderForm({ order, onDone }: { order?: Order | null; onDone: () => void
   return (
     <>
       <div className="space-y-4">
-        <Field label="Customer" error={error && !customerId ? error : undefined}>
+        <Field label="Customer" required error={error && !customerId ? error : undefined}>
           {({ id }) => (
             <Select id={id} value={customerId} disabled={editing} onChange={(e) => setCustomerId(e.target.value)}>
               <option value="">Select a customer…</option>

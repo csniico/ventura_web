@@ -72,6 +72,16 @@ export const appointmentForm = z
   });
 export type AppointmentForm = z.infer<typeof appointmentForm>;
 
+/**
+ * Create-only variant that also rejects a start in the past. Editing keeps the
+ * looser schema so an already-scheduled (possibly in-progress or past) booking
+ * can still be adjusted. One minute of clock skew is tolerated.
+ */
+export const appointmentCreateForm = appointmentForm.refine(
+  (v) => new Date(v.start).getTime() >= Date.now() - 60_000,
+  { message: "Start can’t be in the past", path: ["start"] },
+);
+
 /** Build the create/update body from the form (dates → ISO). */
 export function toAppointmentPayload(form: AppointmentForm) {
   const invitees = form.invitees

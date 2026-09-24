@@ -74,7 +74,7 @@ export function CustomerFormDialog({
       description={editing ? undefined : "Add someone you do business with."}
     >
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
-        <Field label="Name" error={errors.name?.message}>
+        <Field label="Name" required error={errors.name?.message}>
           {({ id, invalid }) => (
             <Input id={id} invalid={invalid} placeholder="Jane Doe" {...register("name")} />
           )}
